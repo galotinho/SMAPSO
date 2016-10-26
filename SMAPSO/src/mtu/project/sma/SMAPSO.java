@@ -18,16 +18,16 @@ public class SMAPSO {
      */
     public static void main(String[] args) {
         // TODO code application logic here
-        String[] parametros = { "-gui", "-local-host", "127.0.0.1", "-name", "Factory1",
+        String[] parametros = { "-gui", "-local-host", "127.0.0.1", "-name", "Factory",
                                 "-container-name", "Loads",
- 				"L1:smapso.FIPARequestAgentsLoads();"
-                              + "L2:smapso.FIPARequestAgentsLoads();"
-                              + "L3:smapso.FIPARequestAgentsLoads()"};		
+ 				"1:mtu.project.sma.load.AgenteLoad(354.98, 27, 1);"
+                              + "2:mtu.project.sma.load.AgenteLoad(178.18, 45, 1);"
+                              + "3:mtu.project.sma.load.AgenteLoad(427.46, 51, 0)"};		
         Boot.main(parametros);		
 		
         String[] novoContainer = { "-local-host", "127.0.0.1", "-container", 
-				   "-container-name", "Manager Main",				
-				   "Manager:smapso.AgentCentral(L1,L2,L3)"};
+				   "-container-name", "Coordenador",				
+				   "Central:mtu.project.sma.central.AgenteCentral(\"iniciar\")"};
 	Boot.main(novoContainer);
         
         	

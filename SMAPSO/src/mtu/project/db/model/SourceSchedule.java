@@ -6,11 +6,13 @@
 package mtu.project.db.model;
 
 import java.io.Serializable;
+import java.util.Date;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.Temporal;
 
 /**
  *
@@ -25,9 +27,11 @@ public class SourceSchedule implements Serializable {
     private int tempo;
     private Double potenciaPrevista;
     private Double potenciaReal;
+    @Temporal(javax.persistence.TemporalType.DATE)
+    private Date dataAtual;
     @ManyToOne
     private SourceEnergy sourceEnergy;
-
+    
     public Long getId() {
         return id;
     }
@@ -58,6 +62,14 @@ public class SourceSchedule implements Serializable {
 
     public void setPotenciaReal(Double potenciaReal) {
         this.potenciaReal = potenciaReal;
+    }
+
+    public Date getDataAtual() {
+        return dataAtual;
+    }
+
+    public void setDataAtual(Date dataAtual) {
+        this.dataAtual = dataAtual;
     }
 
     public SourceEnergy getSourceEnergy() {

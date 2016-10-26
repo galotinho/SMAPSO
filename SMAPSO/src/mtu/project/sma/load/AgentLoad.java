@@ -29,7 +29,6 @@ import mtu.project.db.model.Load;
  */
 public class AgentLoad extends Agent{
    
-int fonteEnergia;
 Load load = new Load();
 
 @Override
@@ -46,13 +45,14 @@ Load load = new Load();
         dfd.addServices(sd);
         
         try{
+            //Argumentos: Potencia, tempo, id da Fonte de Energia
             Object[ ] args = getArguments();
             if( args != null && args.length > 0){
                 load.setEquipamentoId(Long.valueOf(getName()));                
                 load.setPotencia((Double)args[0]);
                 load.setTempo(((int)args[1]));
                 load.setSchedule(null);  
-                fonteEnergia = (int)args[2];
+                load.setFonteEnergia((int)args[2]);
             }
             DFService.register(this, dfd);
         }catch(FIPAException e){
@@ -66,8 +66,6 @@ Load load = new Load();
         
         addBehaviour(new CapturaRequestCentral (this, padrao));
         addBehaviour(new ScheduleAgentLoad (this, 60000));
-        
-        
     }
     
     public boolean verificaTemposAlocados(){
@@ -81,12 +79,6 @@ Load load = new Load();
     public boolean verificaAcionamentoProxCiclo(){
             return true;
     }
-    
-    public int consultaIdFonteEnergia(){
-            return 1;
-    }
-    
-    
     
     public class CapturaRequestCentral extends AchieveREResponder{
 
@@ -135,8 +127,7 @@ Load load = new Load();
         }
     
     public class ScheduleAgentLoad extends TickerBehaviour{
-
-             
+        
         public ScheduleAgentLoad(Agent a, long period) {
             super(a, period);
         }
@@ -146,26 +137,14 @@ Load load = new Load();
             ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
             msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             String situacao;
-           // msg.setContent((String) args[0]);
-           // msg.addReceiver(agentesLoad[i].getName());
             
             if(verificaTemposAlocados()){
                 if(verificaEstadoAtual()){
                     if(verificaAcionamentoProxCiclo()){
-                       msg.addReceiver(super.myAgent.getAID(Integer.toString(fonteEnergia)));
+                       msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
                        msg.setContent("iniciar");
                        myAgent.send(msg);
-                       
                     }
-                }else{
-                    
-                }
-            }else{
-                if(fonteEnergia != 0){
-                    msg.addReceiver(super.myAgent.getAID(Integer.toString(fonteEnergia)));
-                    msg.setContent("registro "+load.getPotencia()+" "+load.getTempo());
-                    myAgent.send(msg);
-                    fonteEnergia = 0;
                 }else{
                     //Adicionando Agente Central como destinatário.
                     DFAgentDescription pesquisarAgenteCentral = new DFAgentDescription();
@@ -181,8 +160,34 @@ Load load = new Load();
                     } catch (FIPAException ex) {
                         Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                    //Carga com Falha
+                    situacao = "F";
+                    msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia());
+                    myAgent.send(msg);
+                }
+            }else{
+                if(load.getFonteEnergia() != 0){
+                    msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
+                    msg.setContent("registro "+load.getPotencia()+" "+load.getTempo());
+                    myAgent.send(msg);
+                }else{
+                    //Adicionando Agente Central como destinatário.
+                    DFAgentDescription pesquisarAgenteCentral = new DFAgentDescription();
+                    ServiceDescription sdAgenteCentral = new ServiceDescription();
+                    sdAgenteCentral.setType("Agente Central");
+                    pesquisarAgenteCentral.addServices(sdAgenteCentral);
+                    DFAgentDescription[] agenteCentral;
+                    try {
+                        agenteCentral = DFService.search(myAgent, pesquisarAgenteCentral);
+                        for(int i = 0; i<agenteCentral.length; i++){
+                            msg.addReceiver(agenteCentral[i].getName());
+                        }
+                    } catch (FIPAException ex) {
+                        Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    //Registrar Carga
                     situacao = "R";
-                    msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo());
+                    msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" 0");
                     myAgent.send(msg);
                 }
             }

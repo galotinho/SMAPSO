@@ -101,21 +101,21 @@ public class AgentCentral extends Agent {
         //Se o Agente Load está ativado e funcionando corretamente, istoé, envia uma mensagem AGREE.
         @Override
         protected void handleAgree (ACLMessage agree){
-            System.out.println("Central de bombeiros " + agree.getSender().getName() +
-                               " informa que saiu para apagar o fogo.");
+            System.out.println("Dados do Agente Load " + agree.getSender().getName() +
+                               " enviados para registro.");
         }
 
         //Se o participante se negar, enviando uma mensagem REFUSE.
         @Override
         protected void handleRefuse (ACLMessage refuse){
-            System.out.println("Central de bombeiros " + refuse.getSender().getName() +
-                               " responde que o fogo está muito longe e não poderá apagá-lo.");
+            System.out.println("Dados referente a carga do Agente Load " + refuse.getSender().getName() +
+                               " estão inconsistentes.");
         }
 
         //Se o participante não entendeu, enviando uma mensagem NOT UNDERSTOOD.
         @Override
         protected void handleNotUnderstood (ACLMessage notUnderstood){
-            System.out.println("Central de bombeiros " +  notUnderstood.getSender().getName() +
+            System.out.println("Agente Load " +  notUnderstood.getSender().getName() +
                            " por algum motivo não entendeu a solicitação.") ;
         }
 
@@ -124,12 +124,12 @@ public class AgentCentral extends Agent {
         protected void handleFailure (ACLMessage failure){
             //Verifica inicialmente se foi um erro nas páginas brancas.
             if(failure.getSender().equals(super.myAgent.getAMS())){
-                System.out.println("Alguma Central de Bombeiros não existe!");
+                System.out.println("Agente Load não existe!");
             }
             /* O conteúdo de uma mensagem envolvida neste protocolo é automaticamente colocado entre 
                parenteses. Com o metodo substring() podemos ler apenas o que esta dentro deles.*/
             else{
-                System.out.println("Falha na central de bombeiros " + failure.getSender().getName() +
+                System.out.println("Falha no Agente Load " + failure.getSender().getName() +
                 ": " + failure.getContent().substring(0, failure.getContent().length()) ) ;
             }
         }
@@ -137,8 +137,8 @@ public class AgentCentral extends Agent {
         //Ao finalizar o protocolo, o participante envia uma mensagem inform.
         @Override
         protected void handleInform (ACLMessage inform ){
-            System.out.println("Central de bombeiros " + inform.getSender().getName() + 
-                               " informa que apagou o fogo." ) ;
+            System.out.println("Agente Load " + inform.getSender().getName() + 
+                               " informa que foi cadastrado na base de dados com sucesso!" ) ;
         }
     }
     

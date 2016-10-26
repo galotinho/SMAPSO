@@ -26,6 +26,7 @@ public class Load implements Serializable {
     private Long equipamentoId;
     private Double potencia;
     private int tempo; // total em minutos
+    private int fonteEnergia;
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "load")
     private List<Schedule> schedule;
 
@@ -51,6 +52,14 @@ public class Load implements Serializable {
 
     public void setTempo(int tempo) {
         this.tempo = tempo;
+    }
+
+    public int getFonteEnergia() {
+        return fonteEnergia;
+    }
+
+    public void setFonteEnergia(int fonteEnergia) {
+        this.fonteEnergia = fonteEnergia;
     }
 
     public List<Schedule> getSchedule() {

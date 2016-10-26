@@ -91,10 +91,9 @@ Boolean resposta = false;
     public String geraDados(){
         String operacao = "C"; //C = Cadastro e A = Alteração
         String alteracao = "S"; //S = Sim e N = Não
-        return operacao+" "+load.getEquipamentoId().toString()+" "+load.getPotencia()+" "+load.getTempo()+" "+alteracao;
+        return operacao+" "+load.getEquipamentoId().toString()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia()+" "+alteracao;
     }
     
-
         public class CapturaRequestLoad extends AchieveREResponder{
 
             public CapturaRequestLoad(Agent a, MessageTemplate mt){
@@ -122,6 +121,7 @@ Boolean resposta = false;
                     Long equipamentoId = Long.parseLong(request.getSender().getName());
                     
                     load.setEquipamentoId(equipamentoId);
+                    load.setFonteEnergia(Integer.valueOf(myAgent.getName()));
                     load.setPotencia(potencia);
                     load.setTempo(tempo);
                     load.setSchedule(null);
