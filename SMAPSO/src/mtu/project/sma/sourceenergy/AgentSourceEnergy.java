@@ -90,8 +90,18 @@ Boolean resposta = false;
     
     public String geraDados(){
         String operacao = "C"; //C = Cadastro e A = Alteração
-        String alteracao = "S"; //S = Sim e N = Não
+        String alteracao = "N"; //S = Sim e N = Não
         return operacao+" "+load.getEquipamentoId().toString()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia()+" "+alteracao;
+    }
+    
+    public int verificaGeracaoEnergia(int fonte){
+        //Retornar 0 se fonte estiver desligada, ou o numero da fonte se estiver ativa.
+        return fonte;
+    }
+     public void verificarCapacidadeAtual(int fonte){
+        //comparaGeracaoAtual();
+        //atualizaBD();
+        
     }
     
         public class CapturaRequestLoad extends AchieveREResponder{
@@ -121,7 +131,8 @@ Boolean resposta = false;
                     Long equipamentoId = Long.parseLong(request.getSender().getName());
                     
                     load.setEquipamentoId(equipamentoId);
-                    load.setFonteEnergia(Integer.valueOf(myAgent.getName()));
+                    int fonte = verificaGeracaoEnergia(Integer.valueOf(myAgent.getName()));
+                    load.setFonteEnergia(fonte);
                     load.setPotencia(potencia);
                     load.setTempo(tempo);
                     load.setSchedule(null);
@@ -135,6 +146,7 @@ Boolean resposta = false;
                     // envia mensagem NOT UNDERSTOOD
                 }else{
                     if(conteudo.equalsIgnoreCase("iniciar")){
+                        verificarCapacidadeAtual(Integer.valueOf(myAgent.getName()));
                         return agree; //envia mensagem AGREE.
                     }else{
                         throw new NotUnderstoodException ( "O Agente Source Energy não entendeu sua solicitação." );

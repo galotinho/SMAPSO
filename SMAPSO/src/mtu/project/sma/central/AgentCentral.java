@@ -19,6 +19,7 @@ import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 import java.util.StringTokenizer;
+import mtu.project.db.model.Load;
 
 public class AgentCentral extends Agent {
 
@@ -88,6 +89,15 @@ public class AgentCentral extends Agent {
             System.out.println("Especifique o procedimento inicial a ser realizado." ) ;
         }
     }
+    
+    public void insereBancoDados(Load carga){
+        System.out.println("Carga inserida no Banco de Dados." );
+    }
+    
+    public void apagarAtualizarSchedule(Load carga){
+        System.out.println("Schedule atualizado no Banco de Dados." );
+    }
+    
     
     public class IniciarAgentsLoad extends AchieveREInitiator{
         
@@ -184,7 +194,27 @@ public class AgentCentral extends Agent {
                 }
                 
                 if(tipo == 1){//Agente Load
+                    StringTokenizer st = new StringTokenizer(msg.getContent());
+                    String situacao = st.nextToken();
+                    String equipamentoId = st.nextToken(); 
+                    String potencia = st.nextToken(); 
+                    String tempo = st.nextToken(); 
+                    String fonteEnergia = st.nextToken(); 
                     
+                    Load carga = new Load();
+                    carga.setEquipamentoId(Long.valueOf(equipamentoId));
+                    carga.setPotencia(Double.valueOf(potencia));
+                    carga.setTempo(Integer.valueOf(tempo));
+                    carga.setFonteEnergia(Integer.valueOf(fonteEnergia));
+                    carga.setSchedule(null);
+                    
+                    if(situacao.equals("R")){
+                        insereBancoDados(carga);
+                    }else{
+                        if(situacao.equals("F")){
+                         apagarAtualizarSchedule(carga);
+                        }
+                    }
                     
                 }else{
                     if(tipo == 2){                                       
