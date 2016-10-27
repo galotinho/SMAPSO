@@ -76,21 +76,22 @@ public class AgentCentral extends Agent {
             /*A classe IniciarAgentsLoad (abaixo) extende a classe AchieveREInitiator, 
             ela atua como o iniciador do protoloco. Seu metodo construtor envia automaticamente 
             a mensagem que esta no objeto msg*/
-            comportamento.addSubBehaviour(new IniciarAgentsLoad(this, msg));            
-            comportamento.addSubBehaviour(new WakerBehaviour(this, 30000){
+            comportamento.addSubBehaviour(new WakerBehaviour(this, 3000){
                 protected void onWake ( ){
-                    System.out.println("Aguardando os Agentes Load ativarem...");
+                    System.out.println("Agentes Load serão registrados!");
                 }
-            });           
+            }); 
+            comportamento.addSubBehaviour(new IniciarAgentsLoad(this, msg));
+            comportamento.addSubBehaviour(new RecebeRequest());
             addBehaviour(comportamento);
-            addBehaviour(new RecebeRequest());
+            
             
         }else{
             System.out.println("Especifique o procedimento inicial a ser realizado." ) ;
         }
     }
     
-    public void insereBancoDados(Load carga){
+    public void inserirBancoDados(Load carga){
         System.out.println("Carga inserida no Banco de Dados." );
     }
     
@@ -148,7 +149,7 @@ public class AgentCentral extends Agent {
         @Override
         protected void handleInform (ACLMessage inform ){
             System.out.println("Agente Load " + inform.getSender().getName() + 
-                               " informa que foi cadastrado na base de dados com sucesso!" ) ;
+                               " informa que o registro está sendo processado!" ) ;
         }
     }
     
@@ -158,12 +159,14 @@ public class AgentCentral extends Agent {
             MessageTemplate protocolo = MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
             MessageTemplate mt = MessageTemplate.and(protocolo, performativa);
-        
+            
             ACLMessage msg = myAgent.receive(mt);
+            
             if (msg != null) {
                 // processar a mensagem recebida
                 int tipo = 0;
                 ACLMessage resposta = msg.createReply();
+                //System.out.println(msg.getContent());
                 try{
                     //Verificando se é um Agente Load (tipo = 1).
                     DFAgentDescription pesquisarAgentesLoad = new DFAgentDescription();
@@ -173,7 +176,10 @@ public class AgentCentral extends Agent {
                     DFAgentDescription[] agentesLoad = DFService.search(myAgent, pesquisarAgentesLoad);
                     
                     for(int i = 0; i<agentesLoad.length; i++){
-                        if(agentesLoad[i].getName().equals(msg.getSender().getName())){
+                        
+                        if(agentesLoad[i].getName().getName().equals(msg.getSender().getName())){
+                          //System.out.println(agentesLoad[i].getName().getName());
+                           System.out.println(msg.getSender().getName());
                            tipo = 1;                            
                         }
                     }
@@ -182,10 +188,12 @@ public class AgentCentral extends Agent {
                     ServiceDescription sdAgentesSE = new ServiceDescription();
                     sdAgentesSE.setType("Agente SE");
                     pesquisarAgentesSE.addServices(sdAgentesSE);
-                    DFAgentDescription[] agentesSE = DFService.search(myAgent, pesquisarAgentesLoad);
+                    DFAgentDescription[] agentesSE = DFService.search(myAgent, pesquisarAgentesSE);
                     
                     for(int i = 0; i<agentesSE.length; i++){
-                        if(agentesSE[i].getName().equals(msg.getSender().getName())){
+                        if(agentesSE[i].getName().getName().equals(msg.getSender().getName())){
+                         //  System.out.println(agentesSE[i].getName().getName());
+                        //   System.out.println(msg.getSender().getName());
                            tipo = 2;                            
                         }
                     }
@@ -208,11 +216,13 @@ public class AgentCentral extends Agent {
                     carga.setFonteEnergia(Integer.valueOf(fonteEnergia));
                     carga.setSchedule(null);
                     
-                    if(situacao.equals("R")){
-                        insereBancoDados(carga);
+                    if(situacao.equals("R")){// Registrar carga
+                        //System.out.println(carga.getEquipamentoId()+" "+carga.getFonteEnergia()+" "+carga.getPotencia());
+                        inserirBancoDados(carga);
                     }else{
-                        if(situacao.equals("F")){
-                         apagarAtualizarSchedule(carga);
+                        if(situacao.equals("F")){ // Carga com falha
+                        //System.out.println(carga.getEquipamentoId()+" "+carga.getFonteEnergia()+" "+carga.getPotencia());
+                        apagarAtualizarSchedule(carga);
                         }
                     }
                     
@@ -225,24 +235,26 @@ public class AgentCentral extends Agent {
                         String tempo = st.nextToken(); 
                         String alteracao = st.nextToken(); 
 
-                        if(!operacao.equals("C") && !operacao.equals("A")){
+                        if(!operacao.equals("C") && !operacao.equals("A")){ //Realizar cadastro de carga ou alteração
                             resposta.setPerformative(ACLMessage.NOT_UNDERSTOOD);
                         }else{   
                             resposta.setPerformative(ACLMessage.AGREE);
                             myAgent.send(resposta);
-                            if(operacao.equals("C")){
+                            if(operacao.equals("C")){ // Realizar cadastro de carga
                                 try{
                                     if(equipamentoId.equals("") || potencia.equals("") || tempo.equals("")){
                                         resposta.setPerformative(ACLMessage.REFUSE);
+                                        System.out.println("Dados para registro da Carga "+equipamentoId+" incompletos!");
                                     }else{
                                         resposta.setPerformative(ACLMessage.INFORM);
+                                        System.out.println("Carga inserida no Banco de Dados." );
                                     }
                                 }catch(Exception e){
                                     resposta.setPerformative(ACLMessage.FAILURE);
-                                    resposta.setContent("Ocorreu uma falha com o Banco de Dados!");
+                                    System.out.println("Ocorreu uma falha com o Banco de Dados!");
                                 }
                             }else{
-                                if(alteracao.equals("S")){
+                                if(alteracao.equals("S")){ // Se alteraçao S(sim), realizar alteração.
                                     try{
                                         CONTADOR++;
                                         if(CONTADOR < 3){
@@ -269,12 +281,3 @@ public class AgentCentral extends Agent {
         }//fim do action
     }//fim da classe
 }
-
-
-/*
-for (Object arg : args) {
-                msg.addReceiver(new AID((String) arg, AID.ISLOCALNAME));
-            }
-
-
-*/

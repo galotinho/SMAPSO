@@ -29,11 +29,10 @@ import mtu.project.db.model.Load;
  */
 public class AgentLoad extends Agent{
    
-Load load = new Load();
 
 @Override
     protected void setup( ){
-        
+        Load load = new Load();
          //Registrando o Agente Central no DF (Páginas Amarelas)
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
@@ -48,11 +47,11 @@ Load load = new Load();
             //Argumentos: Potencia, tempo, id da Fonte de Energia
             Object[ ] args = getArguments();
             if( args != null && args.length > 0){
-                load.setEquipamentoId(Long.valueOf(getName()));                
-                load.setPotencia((Double)args[0]);
-                load.setTempo(((int)args[1]));
+                load.setEquipamentoId(Long.valueOf(getLocalName()));                
+                load.setPotencia(Double.valueOf((String)args[0]));
+                load.setTempo(Integer.valueOf((String)args[1]));
                 load.setSchedule(null);  
-                load.setFonteEnergia((int)args[2]);
+                load.setFonteEnergia(Integer.valueOf((String)args[2]));
             }
             DFService.register(this, dfd);
         }catch(FIPAException e){
@@ -64,12 +63,12 @@ Load load = new Load();
         MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
         MessageTemplate padrao = MessageTemplate.and(protocolo, performativa);
         
-        addBehaviour(new CapturaRequestCentral (this, padrao));
-        addBehaviour(new ScheduleAgentLoad (this, 60000));
+        addBehaviour(new CapturaRequestCentral (this, padrao, load));
+        addBehaviour(new ScheduleAgentLoad (this, 5000, load));
     }
     
     public boolean verificaTemposAlocados(){
-            return true;
+            return false;
     }
     
     public boolean verificaEstadoAtual(){
@@ -81,10 +80,13 @@ Load load = new Load();
     }
     
     public class CapturaRequestCentral extends AchieveREResponder{
-
-            public CapturaRequestCentral(Agent a, MessageTemplate mt){
+            
+        Load load;
+        
+        public CapturaRequestCentral(Agent a, MessageTemplate mt, Load load){
              //Define agente e protocolo de comunicação.
                 super(a, mt);
+                this.load = load;
             }
 
             /* Método que aguarda uma mensagem REQUEST, definida com o uso do objeto mt, utilizado no construtor
@@ -128,12 +130,16 @@ Load load = new Load();
     
     public class ScheduleAgentLoad extends TickerBehaviour{
         
-        public ScheduleAgentLoad(Agent a, long period) {
+        Load load;
+        
+        public ScheduleAgentLoad(Agent a, long period, Load load) {
             super(a, period);
+            this.load = load;
         }
 
         @Override
         protected void onTick() {
+            
             ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
             msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             String situacao;
@@ -181,6 +187,7 @@ Load load = new Load();
                         agenteCentral = DFService.search(myAgent, pesquisarAgenteCentral);
                         for(int i = 0; i<agenteCentral.length; i++){
                             msg.addReceiver(agenteCentral[i].getName());
+                            //System.out.println(agenteCentral[i].getName().getName());
                         }
                     } catch (FIPAException ex) {
                         Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
@@ -188,6 +195,7 @@ Load load = new Load();
                     //Registrar Carga
                     situacao = "R";
                     msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" 0");
+                   // System.out.println(msg.getContent());
                     myAgent.send(msg);
                 }
             }
