@@ -86,7 +86,7 @@ public class Coordinator {
                     System.err.println("Could not find the module " + destinatario + " in the network.");
                 }
             }catch(XBeeException e) {
-                if(!e.getMessage().toString().equals("There was a timeout while executing the requested operation.")){
+                if(!e.getMessage().equals("There was a timeout while executing the requested operation.")){
                    System.err.println("Error transmitting message: " + e.getMessage());
                 }
             }
