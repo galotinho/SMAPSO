@@ -14,8 +14,13 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
+import java.util.Date;
+import java.util.Locale;
 import java.util.StringTokenizer;
+import mtu.project.db.dao.SourceEnergyDAO;
 import mtu.project.db.model.Load;
+import mtu.project.db.model.SourceEnergy;
+import mtu.project.db.model.SourceSchedule;
 
 /**
  *
@@ -25,7 +30,7 @@ public class AgentSourceEnergy extends Agent{
     
 @Override
     protected void setup( ){
-        
+        SourceEnergy source = new SourceEnergy();
          //Registrando o Agente Source Energy no DF (Páginas Amarelas)
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
@@ -37,6 +42,16 @@ public class AgentSourceEnergy extends Agent{
         dfd.addServices(sd);
         
         try{
+            Object[ ] args = getArguments();
+            if( args != null && args.length > 0){
+                source.setSourceId(Long.valueOf(getLocalName()));
+                source.setNameSource((String)args[0]);
+                source.setTypeSource(Integer.valueOf((String)args[1]));
+                source.setSourceSchedule(null);
+                
+                //SourceEnergyDAO.getInstance().save(source);
+                
+            }
             DFService.register(this, dfd);
         }catch(FIPAException e){
             e.printStackTrace();
@@ -77,14 +92,64 @@ public class AgentSourceEnergy extends Agent{
         return dados;
     }
     
-    public int verificaGeracaoEnergia(int fonte){
+    public Double verificaGeracaoEnergia(int fonte){
         //Retornar 0 se fonte estiver desligada, ou o numero da fonte se estiver ativa.
-        return fonte;
+        return 0.0;
     }
-     public String verificarCapacidadeAtual(int fonte){
-        //comparaGeracaoAtual();
-        //atualizaBD();
-        return "N";
+    
+     public String verificarCapacidadeAtual(int fonte, Double geracao){
+        Date dataAtual = new Date();
+        Locale locale = new Locale("pt","BR");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+        String currentTime = sdf.format(dataAtual);
+        
+        StringTokenizer st = new StringTokenizer(currentTime);
+        String hora = st.nextToken();
+        String minuto = st.nextToken();
+        int tempo = conversorTempo(hora, minuto);
+        Double geracaoPrevista = 0.0;
+        
+        SourceEnergy source = SourceEnergyDAO.getInstance().findBySourceId(Long.valueOf((long)fonte));
+                
+        for(SourceSchedule s: source.getSourceSchedule()) {
+           
+            if(s.getDataAtual().compareTo(dataAtual) == 0){
+                if(s.getTempo() == tempo){
+                    geracaoPrevista = s.getPotenciaPrevista();
+                }
+            }
+        }
+        if(geracao == -1){
+            return "S";
+        }else{
+            if((geracao*1.2) < geracaoPrevista){
+                return "S";
+            }else{
+                return "N";
+            }
+        }
+        
+    }
+     
+     public int conversorTempo(String hora, String minuto){
+        
+        int h = Integer.valueOf(hora)*4;
+        int m = Integer.valueOf(minuto);
+        
+        if(m>=0 && m<15){
+            m = 1;
+        }else{
+            if(m>=15 && m<30){
+                m = 2;
+            }else{
+                if(m>=30 && m<45){
+                    m = 3;
+                }else{
+                    m = 4;
+                }
+            }
+        }
+        return h+m;
     }
     
         public class RecebeRequestLoad extends CyclicBehaviour {//este é um comportamento ciclico
@@ -95,6 +160,7 @@ public class AgentSourceEnergy extends Agent{
                 MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
                 MessageTemplate mt = MessageTemplate.and(protocolo, performativa);
                 Load load = new Load();
+                Double geracao;
                 ACLMessage msg = myAgent.receive(mt);
                 
                 if (msg != null) {
@@ -107,10 +173,15 @@ public class AgentSourceEnergy extends Agent{
                         Long equipamentoId = Long.parseLong(msg.getSender().getLocalName());
                         Double potencia = Double.parseDouble(st.nextToken()); //pego o segundo token
                         int tempo = Integer.parseInt(st.nextToken()); //pego o terceiro token
-                        int fonte = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
-
+                        geracao = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
                         load.setEquipamentoId(equipamentoId);
-                        load.setFonteEnergia(fonte);
+
+                        if(geracao != -1){
+                            load.setFonteEnergia(Integer.valueOf(myAgent.getLocalName()));
+                        }else{
+                            load.setFonteEnergia(0);
+                        }
+                        
                         load.setPotencia(potencia);
                         load.setTempo(tempo);
                         load.setSchedule(null);
@@ -119,7 +190,8 @@ public class AgentSourceEnergy extends Agent{
                         
                     }else{
                         if(conteudo.equalsIgnoreCase("iniciar")){
-                            String alteracao = verificarCapacidadeAtual(Integer.valueOf(myAgent.getLocalName()));
+                            geracao = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
+                            String alteracao = verificarCapacidadeAtual(Integer.valueOf(myAgent.getLocalName()), geracao);
                             myAgent.send(gerarMensagem(load,"A",alteracao));
                             
                         }

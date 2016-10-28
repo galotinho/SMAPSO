@@ -80,13 +80,13 @@ public class ScheduleDAO {
         }       
     }
     
-    public void removeAll(Carga carga){
+    public void removeAll(int equipamentoId){
         
         try{
             entityManager.getTransaction().begin();
             Query query = entityManager.createQuery(
                             "DELETE FROM Schedule s WHERE s.load.equipamentoId = :p");
-            query.setParameter("p", (long)carga.getEquipamentoId()).executeUpdate();
+            query.setParameter("p", (long)equipamentoId).executeUpdate();
             
             entityManager.getTransaction().commit();
         }catch (Exception e) {
@@ -95,7 +95,7 @@ public class ScheduleDAO {
         }       
     }
     
-    public Schedule findByEquipamentoId(Long id){
+    public Schedule findByScheduleId(Long id){
         Schedule schedule = null;
         try{
             schedule = entityManager.find(Schedule.class, id);

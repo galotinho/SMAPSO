@@ -19,6 +19,8 @@ import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 import java.util.StringTokenizer;
+import mtu.project.db.dao.LoadDAO;
+import mtu.project.db.dao.ScheduleDAO;
 import mtu.project.db.model.Load;
 
 public class AgentCentral extends Agent {
@@ -91,11 +93,14 @@ public class AgentCentral extends Agent {
         }
     }
     
-    public void inserirBancoDados(Load carga){
+    public void inserirBancoDados(Load load){
+        LoadDAO.getInstance().save(load);
         System.out.println("Carga inserida no Banco de Dados." );
     }
     
-    public void apagarAtualizarSchedule(Load carga){
+    public void zerarSchedule(Load load){
+        Integer id = Integer.valueOf(load.getEquipamentoId().toString());
+        ScheduleDAO.getInstance().removeAll(id);
         System.out.println("Schedule atualizado no Banco de Dados." );
     }
     
@@ -176,10 +181,7 @@ public class AgentCentral extends Agent {
                     DFAgentDescription[] agentesLoad = DFService.search(myAgent, pesquisarAgentesLoad);
                     
                     for(int i = 0; i<agentesLoad.length; i++){
-                        
                         if(agentesLoad[i].getName().getName().equals(msg.getSender().getName())){
-                          //System.out.println(agentesLoad[i].getName().getName());
-                           System.out.println(msg.getSender().getName());
                            tipo = 1;                            
                         }
                     }
@@ -192,9 +194,7 @@ public class AgentCentral extends Agent {
                     
                     for(int i = 0; i<agentesSE.length; i++){
                         if(agentesSE[i].getName().getName().equals(msg.getSender().getName())){
-                         //  System.out.println(agentesSE[i].getName().getName());
-                        //   System.out.println(msg.getSender().getName());
-                           tipo = 2;                            
+                            tipo = 2;                            
                         }
                     }
                 }catch(FIPAException e){
@@ -217,15 +217,12 @@ public class AgentCentral extends Agent {
                     carga.setSchedule(null);
                     
                     if(situacao.equals("R")){// Registrar carga
-                        //System.out.println(carga.getEquipamentoId()+" "+carga.getFonteEnergia()+" "+carga.getPotencia());
                         inserirBancoDados(carga);
                     }else{
                         if(situacao.equals("F")){ // Carga com falha
-                        //System.out.println(carga.getEquipamentoId()+" "+carga.getFonteEnergia()+" "+carga.getPotencia());
-                        apagarAtualizarSchedule(carga);
+                            zerarSchedule(carga);
                         }
                     }
-                    
                 }else{
                     if(tipo == 2){                                       
                         StringTokenizer st = new StringTokenizer(msg.getContent());
@@ -233,46 +230,47 @@ public class AgentCentral extends Agent {
                         String equipamentoId = st.nextToken(); 
                         String potencia = st.nextToken(); 
                         String tempo = st.nextToken(); 
+                        String fonteEnergia = st.nextToken(); 
                         String alteracao = st.nextToken(); 
+                        
+                        Load carga = new Load();
+                        carga.setEquipamentoId(Long.valueOf(equipamentoId));
+                        carga.setPotencia(Double.valueOf(potencia));
+                        carga.setTempo(Integer.valueOf(tempo));
+                        carga.setFonteEnergia(Integer.valueOf(fonteEnergia));
+                        carga.setSchedule(null);
 
                         if(!operacao.equals("C") && !operacao.equals("A")){ //Realizar cadastro de carga ou alteração
-                            resposta.setPerformative(ACLMessage.NOT_UNDERSTOOD);
+                            System.out.println("Agente Central não entendeu solicitação do Agente SE "+msg.getSender().getName());
                         }else{   
-                            resposta.setPerformative(ACLMessage.AGREE);
-                            myAgent.send(resposta);
+                            System.out.println("Agente Central concorda em realizar a solicitação do Agente SE "+msg.getSender().getName());
                             if(operacao.equals("C")){ // Realizar cadastro de carga
                                 try{
                                     if(equipamentoId.equals("") || potencia.equals("") || tempo.equals("")){
-                                        resposta.setPerformative(ACLMessage.REFUSE);
-                                        System.out.println("Dados para registro da Carga "+equipamentoId+" incompletos!");
+                                        System.out.println("Dados para registro da Carga "+equipamentoId+" incompletos! Solicitação está sendo recusada!");
                                     }else{
-                                        resposta.setPerformative(ACLMessage.INFORM);
-                                        System.out.println("Carga inserida no Banco de Dados." );
+                                        inserirBancoDados(carga);
                                     }
                                 }catch(Exception e){
-                                    resposta.setPerformative(ACLMessage.FAILURE);
-                                    System.out.println("Ocorreu uma falha com o Banco de Dados!");
+                                    System.out.println("Ocorreu uma falha com o Banco de Dados no cadastro da Carga "+equipamentoId);
                                 }
                             }else{
                                 if(alteracao.equals("S")){ // Se alteraçao S(sim), realizar alteração.
                                     try{
                                         CONTADOR++;
                                         if(CONTADOR < 3){
-                                            resposta.setPerformative(ACLMessage.REFUSE);
+                                            System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Mas ainda não será processada!");
                                         }else{
                                             CONTADOR = 0;
-                                            resposta.setPerformative(ACLMessage.INFORM);
+                                            //executar algoritmo
+                                            System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Será processada agora!");
                                         }
                                     }catch(Exception e){
-                                        resposta.setPerformative(ACLMessage.FAILURE);
                                         resposta.setContent("Ocorreu uma na execução do algoritmo!");
                                     }
-                                }else{
-                                    resposta.setPerformative(ACLMessage.INFORM);
-                                }                        
+                                }                       
                             }
                         }
-                        myAgent.send(resposta);
                     }else{
                         block();
                     }

@@ -21,8 +21,8 @@ public class SMAPSO {
         String[] parametros = { "-gui", "-local-host", "127.0.0.1", "-name", "Factory",
                                 "-container-name", "Loads-SourceEnergy",
  				//"1:mtu.project.sma.load.AgentLoad(354.98, 27, 4);"
-                                "2:mtu.project.sma.load.AgentLoad(178.18, 45, 4);"
-                              + "4:mtu.project.sma.sourceenergy.AgentSourceEnergy();"
+                                "2:mtu.project.sma.load.AgentLoad(178.18, 45, 1);"
+                             +  "1:mtu.project.sma.sourceenergy.AgentSourceEnergy(Fotovoltaica, 1);"
                               //+ "3:mtu.project.sma.load.AgentLoad(427.46, 51, 0)"
                               };		
         Boot.main(parametros);		

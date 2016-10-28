@@ -57,7 +57,7 @@ public class InserirParticulaBD {
         List<Carga> cargas = new ArrayList<>(set);
         
             for(Carga c: cargas) {
-                ScheduleDAO.getInstance().removeAll(c);
+                ScheduleDAO.getInstance().removeAll(c.getEquipamentoId());
             }
     }
     

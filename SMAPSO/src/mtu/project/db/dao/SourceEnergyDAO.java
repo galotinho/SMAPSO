@@ -16,64 +16,79 @@ import mtu.project.db.model.SourceEnergy;
  */
 public class SourceEnergyDAO {
 
+    private static SourceEnergyDAO instance;
+    protected static EntityManager entityManager;
+
+    public static SourceEnergyDAO getInstance(){
+        if (instance == null){
+            instance = new SourceEnergyDAO();
+        }
+        return instance;
+    }
+
+    private SourceEnergyDAO() {
+        entityManager = createEM();
+    }
+    
     public EntityManager createEM() {
         
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("SMAPSOBDPU");
-        return emf.createEntityManager();
+        
+        if(entityManager == null){
+            entityManager = emf.createEntityManager();
+        }
+        
+        return entityManager;
         
     }
     
-    public void saveOrUpdate(SourceEnergy source){
-        EntityManager em = createEM();
+    public void save(SourceEnergy energy){
         try{
-            em.getTransaction().begin();
-            if(source.getSourceId() == null){
-                em.persist(source);
-            }else{
-                if(!em.contains(source)){
-                    if(em.find(SourceEnergy.class, source.getSourceId()) == null){
-                        throw new Exception("Erro ao atualizar dados da carga;");
-                    }
+            entityManager.getTransaction().begin();
+            entityManager.persist(energy);
+            entityManager.getTransaction().commit();
+        }catch (Exception e) {
+            e.printStackTrace();
+            entityManager.getTransaction().rollback();
+        }
+    }
+    
+    public void update(SourceEnergy energy){
+        try{
+           entityManager.getTransaction().begin();
+           if(!entityManager.contains(energy)){
+                if(entityManager.find(SourceEnergy.class, energy.getSourceId()) == null){
+                    throw new Exception("Erro ao atualizar dados da carga;");
                 }
-                em.merge(source);
-            }
-            em.getTransaction().commit();
+           }
+           entityManager.merge(energy);
+           entityManager.getTransaction().commit();
         }catch (Exception e) {
             e.printStackTrace();
-            em.getTransaction().rollback();
-        }finally {
-            em.close();
+            entityManager.getTransaction().rollback();
         }
     }
     
-    public void remove(Long getSourceId){
-        EntityManager em = createEM();
+    public void remove(Long sourceId){
         try{
-            SourceEnergy source = em.find(SourceEnergy.class, getSourceId);
-            em.getTransaction().begin();
-            em.remove(source);
-            em.getTransaction().commit();
+            SourceEnergy energy = entityManager.find(SourceEnergy.class, sourceId);
+            entityManager.getTransaction().begin();
+            entityManager.remove(energy);
+            entityManager.getTransaction().commit();
         }catch (Exception e) {
             e.printStackTrace();
-            em.getTransaction().rollback();
-        }finally {
-            em.close();
-        }
-        
+            entityManager.getTransaction().rollback();
+        }       
     }
     
-    public SourceEnergy findById(Long getSourceId){
-        EntityManager em = createEM();
-        SourceEnergy source = null;
+    public SourceEnergy findBySourceId(Long sourceId){
+        SourceEnergy carga = null;
         try{
-            source = em.find(SourceEnergy.class, getSourceId);
+            carga = entityManager.find(SourceEnergy.class, sourceId);
         }catch (Exception e) {
             e.printStackTrace();
-        }finally {
-            em.close();
-        }
-        
-        return source;
+        }       
+       
+        return carga;
     }
-    
 }

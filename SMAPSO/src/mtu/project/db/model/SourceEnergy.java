@@ -23,7 +23,6 @@ import javax.persistence.OneToMany;
 public class SourceEnergy implements Serializable {
     private static final long serialVersionUID = 1L;
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long sourceId;
     private int typeSource;
     private String nameSource;

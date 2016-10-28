@@ -18,10 +18,14 @@ import jade.lang.acl.ACLMessage;
 import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
+import java.util.Date;
+import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.model.Load;
+import mtu.project.db.model.Schedule;
 
 /**
  *
@@ -67,16 +71,111 @@ public class AgentLoad extends Agent{
         addBehaviour(new ScheduleAgentLoad (this, 5000, load));
     }
     
-    public boolean verificaTemposAlocados(){
-            return false;
+    public int verificaStatusDaCarga(){
+        return 0;
     }
     
-    public boolean verificaEstadoAtual(){
-            return true;
+    public boolean verificaTemposAlocados(Load load){
+            Load carga = LoadDAO.getInstance().findByEquipamentoId(load.getEquipamentoId());
+            
+            if(carga != null){
+                if(!carga.getSchedule().isEmpty()){
+                    return true;
+                }else{
+                    return false;
+                }
+            }else{
+                return false;
+            }
     }
     
-    public boolean verificaAcionamentoProxCiclo(){
+    public boolean verificaEstadoAtual(Load load){
+        Date horaAtual = new Date();
+        Locale locale = new Locale("pt","BR");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+        String currentTime = sdf.format(horaAtual);
+        
+        StringTokenizer st = new StringTokenizer(currentTime);
+        String hora = st.nextToken();
+        String minuto = st.nextToken();
+        int tempo = conversorTempo(hora, minuto);
+        int acionamento = 0;
+        
+        Load carga = LoadDAO.getInstance().findByEquipamentoId(load.getEquipamentoId());
+                
+        for(Schedule s: carga.getSchedule()) {
+           
+            if(s.getTempo() == tempo){
+                acionamento = 1;
+            }
+        }
+        int status = verificaStatusDaCarga(); // Status 1:Ligado 0:Desligado      
+        
+        if(status == acionamento){
             return true;
+        }
+        
+        return false;
+    }
+    
+    public int conversorTempo(String hora, String minuto){
+        
+        int h = Integer.valueOf(hora)*4;
+        int m = Integer.valueOf(minuto);
+        
+        if(m>=0 && m<15){
+            m = 1;
+        }else{
+            if(m>=15 && m<30){
+                m = 2;
+            }else{
+                if(m>=30 && m<45){
+                    m = 3;
+                }else{
+                    m = 4;
+                }
+            }
+        }
+        return h+m;
+    }
+    
+    public boolean verificaAcionamentoProxCiclo(Load load){
+        
+        Date horaAtual = new Date();
+        Locale locale = new Locale("pt","BR");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+        String currentTime = sdf.format(horaAtual);
+        
+        StringTokenizer st = new StringTokenizer(currentTime);
+        String hora = st.nextToken();
+        String minuto = st.nextToken();
+        int tempo = conversorTempo(hora, minuto);
+        
+        if(tempo == 96){
+            tempo = 0;
+        }else{
+            tempo++;
+        }
+        
+        int acionamento = 0;
+        
+        Load carga = LoadDAO.getInstance().findByEquipamentoId(load.getEquipamentoId());
+                
+        for(Schedule s: carga.getSchedule()) {
+           
+            if(s.getTempo() == tempo){
+                acionamento = 1;
+            }
+        }
+        
+        int status = verificaStatusDaCarga();
+        
+        if(acionamento == 1 && status != 1){
+            return true;
+        }
+        
+        return false;
+        
     }
     
     public class CapturaRequestCentral extends AchieveREResponder{
@@ -144,9 +243,9 @@ public class AgentLoad extends Agent{
             msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             String situacao;
             
-            if(verificaTemposAlocados()){
-                if(verificaEstadoAtual()){
-                    if(verificaAcionamentoProxCiclo()){
+            if(verificaTemposAlocados(load)){
+                if(verificaEstadoAtual(load)){
+                    if(verificaAcionamentoProxCiclo(load)){
                        msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
                        msg.setContent("iniciar");
                        myAgent.send(msg);
