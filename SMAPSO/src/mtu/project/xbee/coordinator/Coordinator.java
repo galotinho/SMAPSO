@@ -10,17 +10,14 @@ package mtu.project.xbee.coordinator;
  * @author Rafael
  */
 import com.digi.xbee.api.RemoteXBeeDevice;
-import com.digi.xbee.api.XBeeDevice;
+import com.digi.xbee.api.ZigBeeDevice;
 import com.digi.xbee.api.XBeeNetwork;
 import com.digi.xbee.api.exceptions.XBeeException;
 import com.digi.xbee.api.models.XBeeMessage;
 
 public class Coordinator {
-	
-	private static final String PORT = "COM12";
-	private static final int BAUD_RATE = 9600;
-        
-        public XBeeNetwork inicializarRedeZigbee(XBeeDevice myDevice){
+    
+        public XBeeNetwork inicializarRedeZigbee(ZigBeeDevice myDevice){
             
             XBeeNetwork network = null;
             try{
@@ -28,13 +25,13 @@ public class Coordinator {
                 System.out.println("\nLocal Device XBee: " + myDevice.getNodeID());
                 System.out.println("\nScanning the network, please wait...");
 
-                network.addRemoteDevice(network.discoverDevice("RASPBERRY1"));
-                network.addRemoteDevice(network.discoverDevice("RASPBERRY2"));
-                network.addRemoteDevice(network.discoverDevice("END_DEVICE1"));
-                network.addRemoteDevice(network.discoverDevice("END_DEVICE2"));
-                network.addRemoteDevice(network.discoverDevice("END_DEVICE3"));
+            //    network.addRemoteDevice(network.discoverDevice("RASPBERRY1"));
+            //    network.addRemoteDevice(network.discoverDevice("RASPBERRY2"));
+            //    network.addRemoteDevice(network.discoverDevice("END_DEVICE1"));
+            //    network.addRemoteDevice(network.discoverDevice("END_DEVICE2"));
+            //    network.addRemoteDevice(network.discoverDevice("END_DEVICE3")); 
                 network.addRemoteDevice(network.discoverDevice("END_DEVICE4"));
-                network.addRemoteDevice(network.discoverDevice("END_DEVICE5"));
+            //    network.addRemoteDevice(network.discoverDevice("END_DEVICE5"));
 
                 System.out.println("Devices found:");
                 System.out.println(network.getDevices().size());
@@ -46,9 +43,6 @@ public class Coordinator {
                 e.printStackTrace();
                 myDevice.close();
                 System.exit(1);
-            }finally {
-                myDevice.close();
-                System.exit(0);
             }
             
             return network;
@@ -56,9 +50,9 @@ public class Coordinator {
         
 	/* @return myDevice
 	 */
-        public XBeeDevice inicializarConexaoRedeZigbee(){
+        public ZigBeeDevice inicializarConexaoRedeZigbee(String porta, int baud_rate){
             
-            XBeeDevice myDevice = new XBeeDevice(PORT, BAUD_RATE);
+            ZigBeeDevice myDevice = new ZigBeeDevice(porta, baud_rate);
 		
             try{
                 myDevice.open();
@@ -66,22 +60,19 @@ public class Coordinator {
                 e.printStackTrace();
                 myDevice.close();
                 System.exit(1);
-            }finally {
-                myDevice.close();
-                System.exit(0);
             }
             
             return myDevice;
         }
         
-        public void enviarRequisicao(XBeeDevice myDevice, XBeeNetwork network, String destinatario, String mensagem){
+        public void enviarRequisicao(ZigBeeDevice myDevice, XBeeNetwork network, String destinatario, String mensagem){
             
             RemoteXBeeDevice remote = network.getDevice(destinatario);
             try{
                 if(remote != null){
                     myDevice.sendData(remote, mensagem.getBytes());
-                    XBeeMessage xbeeMessage = myDevice.readDataFrom(remote);
-                    System.out.println(xbeeMessage.getDataString());
+                    XBeeMessage resposta = myDevice.readDataFrom(remote);
+                    System.out.println(resposta.getDataString());
                 }else{
                     System.err.println("Could not find the module " + destinatario + " in the network.");
                 }
@@ -94,10 +85,10 @@ public class Coordinator {
         
 	public static void main(String[] args) {
             
-            Coordinator coord = new Coordinator();
-            XBeeDevice myDevice = coord.inicializarConexaoRedeZigbee();
+            Coordinator coord = new Coordinator();            
+            ZigBeeDevice myDevice = coord.inicializarConexaoRedeZigbee("COM3", 9600);            
             XBeeNetwork network = coord.inicializarRedeZigbee(myDevice);
-            coord.enviarRequisicao(myDevice, network, "END_DEVICE1", "liga");
+            coord.enviarRequisicao(myDevice, network, "END_DEVICE4", "desliga");
             
 	} 
 }

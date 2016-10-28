@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.model.Load;
 import mtu.project.db.model.Schedule;
+import mtu.project.xbee.ConexaoXBee;
 
 /**
  *
@@ -72,6 +73,11 @@ public class AgentLoad extends Agent{
     }
     
     public int verificaStatusDaCarga(){
+        
+        String resposta = ConexaoXBee.getInstance("COM3", 9600).enviarRequisicao("END_DEVICE4", "liga");
+        if(resposta.equals("Ligado!")){
+            return 1;
+        }
         return 0;
     }
     
@@ -272,6 +278,7 @@ public class AgentLoad extends Agent{
                 }
             }else{
                 if(load.getFonteEnergia() != 0){
+                    System.out.println(verificaStatusDaCarga());
                     msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
                     msg.setContent("registro "+load.getPotencia()+" "+load.getTempo());
                     myAgent.send(msg);
