@@ -14,13 +14,23 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import mtu.project.db.dao.SourceEnergyDAO;
 import mtu.project.db.model.Load;
 import mtu.project.db.model.SourceEnergy;
 import mtu.project.db.model.SourceSchedule;
+import mtu.project.xbee.ConexaoXBee;
 
 /**
  *
@@ -48,8 +58,6 @@ public class AgentSourceEnergy extends Agent{
                 source.setNameSource((String)args[0]);
                 source.setTypeSource(Integer.valueOf((String)args[1]));
                 source.setSourceSchedule(null);
-                
-                //SourceEnergyDAO.getInstance().save(source);
                 
             }
             DFService.register(this, dfd);
@@ -92,9 +100,20 @@ public class AgentSourceEnergy extends Agent{
         return dados;
     }
     
-    public Double verificaGeracaoEnergia(int fonte){
-        //Retornar 0 se fonte estiver desligada, ou o numero da fonte se estiver ativa.
-        return 0.0;
+    public Double verificaGeracaoEnergia(int fonte) throws InterruptedException, ExecutionException{
+        Double resultado;
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        List<Callable<String>> lst = new ArrayList<>();
+        lst.add(new ConexaoXBee("END_DEVICE4", "liga", "COM12", 9600));
+        
+        List<Future<String>> tasks = executorService.invokeAll(lst);
+        if(tasks.get(0).get().equals("Ligado!")){
+            resultado = 1.0;
+        }else{
+            resultado = 0.0;
+        }
+        executorService.shutdown();
+        return resultado;
     }
     
      public String verificarCapacidadeAtual(int fonte, Double geracao){
@@ -160,7 +179,7 @@ public class AgentSourceEnergy extends Agent{
                 MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
                 MessageTemplate mt = MessageTemplate.and(protocolo, performativa);
                 Load load = new Load();
-                Double geracao;
+                Double geracao = 0.0;
                 ACLMessage msg = myAgent.receive(mt);
                 
                 if (msg != null) {
@@ -173,7 +192,11 @@ public class AgentSourceEnergy extends Agent{
                         Long equipamentoId = Long.parseLong(msg.getSender().getLocalName());
                         Double potencia = Double.parseDouble(st.nextToken()); //pego o segundo token
                         int tempo = Integer.parseInt(st.nextToken()); //pego o terceiro token
-                        geracao = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
+                        try {
+                            geracao = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
+                        } catch (InterruptedException | ExecutionException ex) {
+                            Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                         load.setEquipamentoId(equipamentoId);
 
                         if(geracao != -1){
@@ -190,7 +213,11 @@ public class AgentSourceEnergy extends Agent{
                         
                     }else{
                         if(conteudo.equalsIgnoreCase("iniciar")){
-                            geracao = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
+                            try {
+                                geracao = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
+                            } catch (InterruptedException | ExecutionException ex) {
+                                Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
+                            }
                             String alteracao = verificarCapacidadeAtual(Integer.valueOf(myAgent.getLocalName()), geracao);
                             myAgent.send(gerarMensagem(load,"A",alteracao));
                             

@@ -6,7 +6,6 @@
 package mtu.project.sma;
 
 import jade.Boot;
-import mtu.project.db.model.Load;
 
 /**
  *
@@ -19,10 +18,11 @@ public class SMAPSO {
      */
     public static void main(String[] args) {
         // TODO code application logic here
+               
         String[] parametros = { "-gui", "-local-host", "127.0.0.1", "-name", "Factory",
                                 "-container-name", "Loads-SourceEnergy",
- 				//"1:mtu.project.sma.load.AgentLoad(354.98, 27, 4);"
-                                "2:mtu.project.sma.load.AgentLoad(178.18, 45, 1);"
+ 				"3:mtu.project.sma.load.AgentLoad(354.98, 27, 1, 0);"
+                             +  "2:mtu.project.sma.load.AgentLoad(178.18, 45, 1, 15000);"
                              +  "1:mtu.project.sma.sourceenergy.AgentSourceEnergy(Fotovoltaica1, 1);"
                               //+ "3:mtu.project.sma.load.AgentLoad(427.46, 51, 0)"
                               };		

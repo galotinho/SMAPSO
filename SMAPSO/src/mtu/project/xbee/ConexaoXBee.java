@@ -9,93 +9,86 @@ import com.digi.xbee.api.RemoteXBeeDevice;
 import com.digi.xbee.api.XBeeNetwork;
 import com.digi.xbee.api.ZigBeeDevice;
 import com.digi.xbee.api.exceptions.XBeeException;
-import com.digi.xbee.api.models.XBeeMessage;
+import java.util.concurrent.Callable;
 
 /**
  *
- * @author rferreir
+ * @author Rafael
  */
-public class ConexaoXBee {
-    private static ConexaoXBee instance;
-    protected static ZigBeeDevice myDevice;            
-    protected static XBeeNetwork network;
+public class ConexaoXBee implements Callable<String>{
     
-    public static ConexaoXBee getInstance(String port, int baud_rate){
-        if (instance == null){
-            instance = new ConexaoXBee(port, baud_rate);
-        }
-        return instance;
-    }
+    String destinatario; 
+    String mensagem;
+    String port;
+    int baud_rate;
 
-    private ConexaoXBee(String port, int baud_rate) {
-        myDevice = inicializarConexaoRedeZigbee(port, baud_rate);
-        network = inicializarRedeZigbee();
+    public ConexaoXBee(String destinatario, String mensagem, String port, int baud_rate) {
+        this.destinatario = destinatario;
+        this.mensagem = mensagem;
+        this.port = port;
+        this.baud_rate = baud_rate;
     }
     
-    public ZigBeeDevice inicializarConexaoRedeZigbee(String port, int baud_rate){
-        if(myDevice == null){
-            myDevice = new ZigBeeDevice(port, baud_rate);
-            try{
-                myDevice.open();
-            }catch(XBeeException e){
-                e.printStackTrace();
-                myDevice.close();
-                System.out.println("Conexao nao foi estabelecida!");
-            }
-        }    
-        return myDevice;
-    }
-    
-    public XBeeNetwork inicializarRedeZigbee(){
-      
-        if(network == null && myDevice != null){
-            try{
-                network = myDevice.getNetwork();
-                System.out.println("\nLocal Device XBee: " + myDevice.getNodeID());
-                System.out.println("\nScanning the network, please wait...");
-
-            //    network.addRemoteDevice(network.discoverDevice("RASPBERRY1"));
-            //    network.addRemoteDevice(network.discoverDevice("RASPBERRY2"));
-            //    network.addRemoteDevice(network.discoverDevice("END_DEVICE1"));
-            //    network.addRemoteDevice(network.discoverDevice("END_DEVICE2"));
-            //    network.addRemoteDevice(network.discoverDevice("END_DEVICE3")); 
-                network.addRemoteDevice(network.discoverDevice("END_DEVICE4"));
-            //    network.addRemoteDevice(network.discoverDevice("END_DEVICE5"));
-
-                System.out.println("Devices found:");
-                System.out.println(network.getDevices().size());
-
-                for(RemoteXBeeDevice remote : network.getDevices()){
-                    System.out.println(" - " + remote.getNodeID());
-                }
-            }catch(XBeeException e){
-                e.printStackTrace();
-                myDevice.close();
-                System.out.println("Alguns dispostivos nao foram encontrados e a rede nao pode ser estabelecida!");
-            }
-        }
         
-        return network;
+    public String inicializarConexaoRedeZigbee(){
+        try{
+            ZigBeeDevice myDevice = new ZigBeeDevice(port, baud_rate); 
+            myDevice.open();
+            return inicializarRedeZigbee(myDevice);
+        }catch(Exception e){
+           return "false";
+        }
     }
     
-    public String enviarRequisicao(String destinatario, String mensagem){
-            
-        XBeeMessage resposta = null;
-        RemoteXBeeDevice remote = network.getDevice(destinatario);
+    public String inicializarRedeZigbee(ZigBeeDevice myDevice){
         try{
+            XBeeNetwork network = myDevice.getNetwork();
+            network.discoverDevice(destinatario);
+            return enviarRequisicao(myDevice, network);
+        }catch(Exception e){
+            return "false";
+        }
+    }
+    
+    public String enviarRequisicao(ZigBeeDevice myDevice, XBeeNetwork network){
+               
+        try{
+            RemoteXBeeDevice remote = myDevice.getNetwork().getDevice(destinatario);
             if(remote != null){
                 myDevice.sendData(remote, mensagem.getBytes());
-                resposta = myDevice.readDataFrom(remote);
-                System.out.println(resposta.getDataString());
+                String resultado = myDevice.readData().getDataString();
+                myDevice.close();
+                
+                return resultado;
             }else{
                 System.err.println("Could not find the module " + destinatario + " in the network.");
+                return "false";
             }
         }catch(XBeeException e) {
-            if(!e.getMessage().equals("There was a timeout while executing the requested operation.")){
-               System.err.println("Error transmitting message: " + e.getMessage());
-            }
+           return "false";
         }
-        return resposta.getDataString();
+    }
+    
+    @Override
+    public String call(){
+        String resultado = null;
+        int contadorDeFalha = 0;
+        try {
+            do{
+                resultado = inicializarConexaoRedeZigbee();
+                if(resultado.equals("false")){
+                    contadorDeFalha++;
+                    Thread.sleep(500);
+                }
+                if(contadorDeFalha == 20){
+                    resultado = "Falha";
+                }
+                
+            }while(resultado.equals("false"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return resultado;
     }
     
 }

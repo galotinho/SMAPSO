@@ -19,7 +19,6 @@ import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 import java.util.StringTokenizer;
-import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.dao.ScheduleDAO;
 import mtu.project.db.model.Load;
 
@@ -48,7 +47,6 @@ public class AgentCentral extends Agent {
         
         Object[ ] args = getArguments( );
         if ( args != null && args.length > 0){
-                        
             DFAgentDescription pesquisarAgentesLoad = new DFAgentDescription();
             ServiceDescription sdAgentesLoad = new ServiceDescription();
             sdAgentesLoad.setType("Agente Load");
@@ -79,6 +77,7 @@ public class AgentCentral extends Agent {
             ela atua como o iniciador do protoloco. Seu metodo construtor envia automaticamente 
             a mensagem que esta no objeto msg*/
             comportamento.addSubBehaviour(new WakerBehaviour(this, 3000){
+                @Override
                 protected void onWake ( ){
                     System.out.println("Agentes Load serão registrados!");
                 }
@@ -94,7 +93,7 @@ public class AgentCentral extends Agent {
     }
     
     public void inserirBancoDados(Load load){
-        LoadDAO.getInstance().save(load);
+       // LoadDAO.getInstance().save(load);
         System.out.println("Carga inserida no Banco de Dados." );
     }
     
