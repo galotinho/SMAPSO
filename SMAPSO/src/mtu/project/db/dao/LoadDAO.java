@@ -69,6 +69,21 @@ public class LoadDAO {
         }
     }
     
+    public void saveWithFindById(Load load){
+        Load carga = null;
+        try{
+            carga = entityManager.find(Load.class, load.getEquipamentoId());
+            if(carga == null){
+                entityManager.getTransaction().begin();
+                entityManager.persist(carga);
+                entityManager.getTransaction().commit();
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+            entityManager.getTransaction().rollback();
+        }       
+    }
+    
     public void remove(Long equipamentoId){
         try{
             Load carga = entityManager.find(Load.class, equipamentoId);

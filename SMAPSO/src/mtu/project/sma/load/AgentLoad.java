@@ -41,8 +41,13 @@ import mtu.project.xbee.ConexaoXBee;
  */
 public class AgentLoad extends Agent{
 
-int acionar = 0;
-    
+int acionarDispositivo = 0;
+int ativarComportamento = 0;
+int reiniciarComportamento = 0;
+String dispositivo;
+String porta;
+int rate;
+
 @Override
     protected void setup( ){
         Load load = new Load();
@@ -67,6 +72,9 @@ int acionar = 0;
                 load.setSchedule(null);  
                 load.setFonteEnergia(Integer.valueOf((String)args[2])); //Argumento 3
                 sleep = Long.valueOf((String)args[3]); //Argumento 4
+                dispositivo = (String)args[4];//Argumento 5
+                porta = (String)args[5]; //Argumento 6
+                rate = Integer.valueOf((String)args[6]); //Argumento 7
             }
             DFService.register(this, dfd);
         }catch(FIPAException e){
@@ -77,21 +85,20 @@ int acionar = 0;
         MessageTemplate protocolo = MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
         MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
         MessageTemplate padrao = MessageTemplate.and(protocolo, performativa);
+        
         //Comportamento para receber a mensagem inicial do Agente Central.
         addBehaviour(new CapturaRequestCentral (this, padrao, load));
         
         //Adiciona o comportamento responsável por realizar todo o ciclo de ações do Agente a cada 10 minutos.
-        addBehaviour(new ScheduleAgentLoad (this, 30000, load, sleep));
+        addBehaviour(new ScheduleAgentLoad (this, 10000, load, sleep));
     }
     
     // Método responsável por enviar a requisição ao dispositivo remoto e esperar sua resposta.
     public int verificaStatusDaCarga() throws InterruptedException, ExecutionException{
         
         int resultado; //variável que guarda o retorno enviado pelo dispositivo.
-        String dispositivo = "END_DEVICE4";
+        
         String comando = "status";
-        String porta = "COM12";
-        int rate = 9600;
         //Cria uma pool de threads e adiciona a Thread para fazer uso da porta serial.
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         List<Callable<String>> lst = new ArrayList<>();
@@ -109,12 +116,15 @@ int acionar = 0;
         return resultado;
     }
     
-    public void acionarCarga() throws InterruptedException, ExecutionException{
+    public void acionarDesligarCarga() throws InterruptedException, ExecutionException{
         
-        String dispositivo = "END_DEVICE4";
-        String comando = "ligar";
-        String porta = "COM12";
-        int rate = 9600;
+        String comando;
+        if(acionarDispositivo == 1){
+            comando = "ligar";
+        }else{
+            comando = "desligar";
+        }        
+        
         //Cria uma pool de threads e adiciona a Thread para fazer uso da porta serial.
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         List<Callable<String>> lst = new ArrayList<>();
@@ -132,11 +142,7 @@ int acionar = 0;
         Load carga = LoadDAO.getInstance().findByEquipamentoId(load.getEquipamentoId());
         //Verifica se a carga já existe no Banco de Dados.
         if(carga != null){
-            if(!carga.getSchedule().isEmpty()){ //Verifica se já existe Schedule associado à carga.
-                return true; //retorna true caso já haja schedule para a carga, retorna false caso não.
-            }else{
-                return false;
-            }
+            return !carga.getSchedule().isEmpty(); //Verifica se já existe Schedule associado à carga.
         }else{
             return false;
         }
@@ -165,10 +171,7 @@ int acionar = 0;
         }
         int status = verificaStatusDaCarga(); // Verifica status da carga no momento atual 1:Ligado 0:Desligado.      
         
-        if(status == acionamento){ // Se status e acionamento são iguais, a carga está sincronizada com o schedule. Caso contrário estará ocorrendo uma falha.
-            return true;
-        }
-        return false;
+        return status == acionamento;
     }
     
     // Método útil para converter a hora atual no seu instante de tempo correspondente.
@@ -194,7 +197,7 @@ int acionar = 0;
     }
     
     //Método responsável por verificar se a carga será acionada no próximo instante de tempo.
-    public boolean verificaAcionamentoProxCiclo(Load load) throws InterruptedException, ExecutionException{
+    public int verificaMudancaProxCiclo(Load load) throws InterruptedException, ExecutionException{
         //Verifica-se qual a hora atual e armazena na variável currentTime no formato "HH mm".
         Date horaAtual = new Date();
         Locale locale = new Locale("pt","BR");
@@ -222,13 +225,25 @@ int acionar = 0;
                     acionamento = 1;
                 }
             }
-            int status = verificaStatusDaCarga(); // Verifica status da carga no moemento atual 1:Ligado 0:Desligado.  
-
-            if(acionamento == 1 && status != 1){ // Verifica-se se na próximo instante de tempo a carga deverá estar ligada e se ela está ligada no instante atual.
-                return true; // Caso estejam divergindo em 1(acionamento) e 0(status atual) retorno true caso estejam iguais ou divergindo em 0(acionamento) e 1(status atual) retorno false.
-            }               // Só irá ser acionada no proximo ciclo caso esteja desligada atualmente e segundo o Banco de Dados deva estar ligada no próximo instante de tempo.
+            int status = verificaStatusDaCarga(); // Verifica status da carga no momento atual 1:Ligado 0:Desligado.  
+            //Return: 1 para ligar a carga, 2 para desligar a carga, 0 para não fazer nada.
+            if(status == 0 && acionamento == 1){ // Verifica-se se na próximo instante de tempo a carga deverá estar ligada.
+                return 1;
+            }else{
+                if(status == 1 && acionamento == 0){ // Verifica-se se na próximo instante de tempo a carga deverá estar desligada.
+                    return 2;
+                }
+            }
         }
-        return false;
+        return 0;
+    }
+    
+    // Método necessário para sincronizar o tempo em que cada Agente irá utilizar a porta com para comunicação com o dispositivo.
+    public boolean sincronizar(Long tempo, long sleep){
+        
+        Long tempoAtual = new Date().getTime() - tempo;
+                
+        return tempoAtual < sleep;
     }
     
     // Comportamento para responder a mensagem de "iniciar" do Agente Central.
@@ -275,7 +290,8 @@ int acionar = 0;
                 
                 ACLMessage inform = request.createReply();
                 inform.setPerformative(ACLMessage.INFORM);
-
+                //Autoriza a execução do Ticker Behaviour.
+                ativarComportamento = 1;
                 return inform; // envia mensagem INFORM.
 
             }
@@ -290,50 +306,79 @@ int acionar = 0;
             super(a, period);
             this.load = load;
             this.sleep = sleep;
+            setFixedPeriod(true); // método que faz com que o Ticker Behavior execute no mesmo tempo em todos os Agentes.
         }
 
         @Override
         protected void onTick() {
-            
-            //Após receber a mensagem inicial do Agente Central o Agente Load dorme para poder sincronizar com os demais Agentes.
-            //Sincronização é necessária para que não ocorra acesso simutâneo à porta serial para envio de requisições via ZigBee.
-            try {
-                Thread.sleep(sleep);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            //Verifica-se se é hora de acionar a carga. Se acionar = 1 sim, se acionar = 0 não.
-            if(acionar == 1){
-                try {
-                    acionarCarga();
-                    acionar = 0;
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (ExecutionException ex) {
-                    Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
+            // Se a variável ativarAgente for 1, é porque o Agente Central envio mensagem para iniciar a execução.
+            if(ativarComportamento == 1){
+                if(reiniciarComportamento == 0){ //Ao receber a mensagem do Agente Central todos os Agentes Loads reiniciam suas execuções para começarem juntos e sincronizados.
+                    reiniciarComportamento = 1;
+                    restart();
+                }                 
+                Long tempo = new Date().getTime();
+                while(sincronizar(tempo, sleep)){} // while que executa o método de verificação do tempo para realizar a sincronização.                                        
+                            
+                //Verifica-se se é hora de acionar a carga. Se acionar = 1 sim, se acionar = 0 não.
+                if(acionarDispositivo != 0){
+                    try {
+                        acionarDesligarCarga();
+                        acionarDispositivo = 0;
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
-            }
-            
-            ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-            
-            //Variável que determina o tipo de mensagem a ser enviada. R caso seja para cadastrar a Carga ou F caso ocorra alguma falha.
-            //Essa situação só é enviada para Agente Central, caso o cadastro seja realizado via Agente SE, essa variável não é usada.
-            String situacao; 
-            
-            if(verificaTemposAlocados(load)){ //Verifica se a carga já está cadastrada e se possui schedule registrado. Caso não, o cadastro da carga é acionado.
-                try {
-                    if(verificaEstadoAtual(load)){ //Verifica se o status da carga é a mesma que está cadastrada no schedule da carga. Caso não, uma mensagem de falha é enviada para o Agente Central.
-                        if(verificaAcionamentoProxCiclo(load)){ //Verifica se a carga será acionada no próximo ciclo. 
-                            if(load.getFonteEnergia()!=0){      //Caso sim, envia uma mensagem "iniciar" para o Agente SE se estiver ligado a um.
-                                msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
-                                msg.setContent("iniciar");
-                                myAgent.send(msg);
-                            }else{//Caso não possua Agente SE, aciona a carga no próximo ciclo.
-                                acionar = 1;
+
+                ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+
+                //Variável que determina o tipo de mensagem a ser enviada. R caso seja para cadastrar a Carga ou F caso ocorra alguma falha.
+                //Essa situação só é enviada para Agente Central caso o cadastro seja realizado via Agente SE essa variável não é usada.
+                String situacao; 
+
+                if(verificaTemposAlocados(load)){ //Verifica se a carga já está cadastrada e se possui schedule registrado. Caso não, o cadastro da carga é acionado.
+                    try {
+                        if(verificaEstadoAtual(load)){ //Verifica se o status da carga é a mesma que está cadastrada no schedule da carga. Caso não, uma mensagem de falha é enviada para o Agente Central.
+                            int acao = verificaMudancaProxCiclo(load);
+                            if(acao != 0){ //Verifica se a carga será acionada/desligada no próximo ciclo. 
+                                if(load.getFonteEnergia()!=0){//Caso sim, envia uma mensagem 1-acionar ou 2-desligar para o Agente SE se estiver ligado a um.
+                                    msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
+                                    msg.setContent(String.valueOf(acao));
+                                    myAgent.send(msg);
+                                }
+                                //Aciona/desliga a carga no próximo ciclo.   
+                                acionarDispositivo = acao;
                             }
+                        }else{
+                            //Adicionando Agente Central como destinatário.
+                            DFAgentDescription pesquisarAgenteCentral = new DFAgentDescription();
+                            ServiceDescription sdAgenteCentral = new ServiceDescription();
+                            sdAgenteCentral.setType("Agente Central");
+                            pesquisarAgenteCentral.addServices(sdAgenteCentral);
+                            DFAgentDescription[] agenteCentral;
+                            try {
+                                agenteCentral = DFService.search(myAgent, pesquisarAgenteCentral);
+                                for (DFAgentDescription agenteCentral1 : agenteCentral) {
+                                    msg.addReceiver(agenteCentral1.getName());
+                                }
+                            } catch (FIPAException ex) {
+                                Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            //Carga com Falha, envia mensagem de falha para o Agente Central.
+                            situacao = "F";
+                            msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia());
+                            myAgent.send(msg);
                         }
-                    }else{
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }else{
+                    if(load.getFonteEnergia() != 0){ //Envia uma mensagem solicitando registro/atualização no banco de dados ao Agente SE.
+                        msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
+                        msg.setContent("R "+load.getPotencia()+" "+load.getTempo());
+                        myAgent.send(msg);
+                    }else{//Envia uma mensagem solicitando cadastro ou update no banco de dados ao Agente Central.
                         //Adicionando Agente Central como destinatário.
                         DFAgentDescription pesquisarAgenteCentral = new DFAgentDescription();
                         ServiceDescription sdAgenteCentral = new ServiceDescription();
@@ -342,44 +387,17 @@ int acionar = 0;
                         DFAgentDescription[] agenteCentral;
                         try {
                             agenteCentral = DFService.search(myAgent, pesquisarAgenteCentral);
-                            for(int i = 0; i<agenteCentral.length; i++){
-                                msg.addReceiver(agenteCentral[i].getName());
+                            for (DFAgentDescription agenteCentral1 : agenteCentral) {
+                                msg.addReceiver(agenteCentral1.getName());
                             }
                         } catch (FIPAException ex) {
                             Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
                         }
-                        //Carga com Falha, envia mensagem de falha para o Agente Central.
-                        situacao = "F";
-                        msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia());
+                        //Registrar Carga, envia mensagem de registro para o Agente Central.
+                        situacao = "R";
+                        msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" 0");
                         myAgent.send(msg);
                     }
-                } catch (InterruptedException | ExecutionException ex) {
-                    Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }else{
-                if(load.getFonteEnergia() != 0){ //Envia uma mensagem solicitando cadastro ou update no banco de dados ao Agente SE.
-                    msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
-                    msg.setContent("registro "+load.getPotencia()+" "+load.getTempo());
-                    myAgent.send(msg);
-                }else{//Envia uma mensagem solicitando cadastro ou update no banco de dados ao Agente Central.
-                    //Adicionando Agente Central como destinatário.
-                    DFAgentDescription pesquisarAgenteCentral = new DFAgentDescription();
-                    ServiceDescription sdAgenteCentral = new ServiceDescription();
-                    sdAgenteCentral.setType("Agente Central");
-                    pesquisarAgenteCentral.addServices(sdAgenteCentral);
-                    DFAgentDescription[] agenteCentral;
-                    try {
-                        agenteCentral = DFService.search(myAgent, pesquisarAgenteCentral);
-                        for(int i = 0; i<agenteCentral.length; i++){
-                            msg.addReceiver(agenteCentral[i].getName());
-                        }
-                    } catch (FIPAException ex) {
-                        Logger.getLogger(AgentLoad.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    //Registrar Carga, envia mensagem de registro para o Agente Central.
-                    situacao = "R";
-                    msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" 0");
-                    myAgent.send(msg);
                 }
             }
         }

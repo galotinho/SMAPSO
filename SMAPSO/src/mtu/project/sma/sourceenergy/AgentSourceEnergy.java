@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.dao.SourceEnergyDAO;
 import mtu.project.db.model.Load;
 import mtu.project.db.model.SourceEnergy;
@@ -38,7 +39,11 @@ import mtu.project.xbee.ConexaoXBee;
  */
 public class AgentSourceEnergy extends Agent{
     
-@Override
+    String dispositivo;
+    String porta;
+    int rate;
+    
+    @Override
     protected void setup( ){
         SourceEnergy source = new SourceEnergy();
          //Registrando o Agente Source Energy no DF (Páginas Amarelas)
@@ -58,16 +63,20 @@ public class AgentSourceEnergy extends Agent{
                 source.setNameSource((String)args[0]);
                 source.setTypeSource(Integer.valueOf((String)args[1]));
                 source.setSourceSchedule(null);
+                dispositivo = (String)args[2];
+                porta = (String)args[3];
+                rate = Integer.valueOf((String)args[4]);
                 
             }
             DFService.register(this, dfd);
         }catch(FIPAException e){
             e.printStackTrace();
         }
-            
+        // Comportamento que recebe requisições dos Agentes Load.    
         addBehaviour(new RecebeRequestLoad ());
     }
     
+    // Método que gera mensagem para o Agente Central.
     public ACLMessage gerarMensagem(Load load, String operacao, String alteracao){
         
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
@@ -80,9 +89,9 @@ public class AgentSourceEnergy extends Agent{
             try{
                 //Pesquisando pelo Agente Coordenador.
                 DFAgentDescription[] agenteCentral = DFService.search(this, pesquisarAgenteCentral);
-                for(int i = 0; i<agenteCentral.length; i++){
-                    msg.addReceiver(agenteCentral[i].getName());
-                }
+            for (DFAgentDescription agenteCentral1 : agenteCentral) {
+                msg.addReceiver(agenteCentral1.getName());
+            }
             }catch(FIPAException e){
                 e.printStackTrace();
             }
@@ -92,31 +101,37 @@ public class AgentSourceEnergy extends Agent{
         return msg;
     }
     
+    // Método que monta a string de mensagem com as informações a serem enviadas para o Agente Central.
     public String geraDados(Load load, String op, String alt){
-        String operacao = op; //C = Cadastro e A = Alteração
+        String operacao = op; //R = Registro e A = Alteração
         String alteracao = alt; //S = Sim e N = Não
         String dados = operacao+" "+load.getEquipamentoId().toString()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia()+" "+alteracao;
         
         return dados;
     }
     
-    public Double verificaGeracaoEnergia(int fonte) throws InterruptedException, ExecutionException{
-        Double resultado;
+    // Verifica-se se o dispositivo está gerando energia.
+    public Double verificaGeracaoEnergia() throws InterruptedException, ExecutionException{
+        
+        Double resultado; //variável que guarda o retorno enviado pelo dispositivo.
+        String comando = "status";
+        //Cria uma pool de threads e adiciona a Thread para fazer uso da porta serial.
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         List<Callable<String>> lst = new ArrayList<>();
-        lst.add(new ConexaoXBee("END_DEVICE4", "liga", "COM12", 9600));
-        
+        lst.add(new ConexaoXBee(dispositivo, comando, porta, rate));
+        //Executa a Thread e espera o resultado de retorno.
         List<Future<String>> tasks = executorService.invokeAll(lst);
-        if(tasks.get(0).get().equals("Ligado!")){
-            resultado = 1.0;
-        }else{
-            resultado = 0.0;
-        }
+        // Atribui-se o valor lido no dispositivo à variável Resultado.
+        resultado = Double.valueOf(tasks.get(0).get());
+        
+        //Finaliza a pool de Threads.
         executorService.shutdown();
+        
         return resultado;
     }
     
-     public String verificarCapacidadeAtual(int fonte, Double geracao){
+    //Compara a capacidade gerada com a capacidade de geração prevista.
+    public String verificarCapacidadeAtual(int fonte, Double geracao){
         Date dataAtual = new Date();
         Locale locale = new Locale("pt","BR");
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
@@ -127,30 +142,33 @@ public class AgentSourceEnergy extends Agent{
         String minuto = st.nextToken();
         int tempo = conversorTempo(hora, minuto);
         Double geracaoPrevista = 0.0;
-        
+        // Busca no Banco de Dados os dados de geração do gerador de energia..
         SourceEnergy source = SourceEnergyDAO.getInstance().findBySourceId(Long.valueOf((long)fonte));
                 
         for(SourceSchedule s: source.getSourceSchedule()) {
-           
+            //Se a data for encontrada na comparação, o valor 0 é retornado.
             if(s.getDataAtual().compareTo(dataAtual) == 0){
+                //É realizada a busca da geração prevista para o tempo atual.
                 if(s.getTempo() == tempo){
                     geracaoPrevista = s.getPotenciaPrevista();
                 }
             }
         }
+        // Se Geração for -1 é porque o dispositivo não está funcionando, então retorna S indicando que o algoritmo de balanceamento precisa saber.
         if(geracao == -1){
             return "S";
         }else{
+            // Se Geração mais 20% for menor que o previsto é porque a geração não é satisfatória, então retorna S indicando que o algoritmo de balanceamento precisa saber.
             if((geracao*1.2) < geracaoPrevista){
                 return "S";
             }else{
                 return "N";
             }
         }
-        
     }
-     
-     public int conversorTempo(String hora, String minuto){
+    
+    // Método útil para converter a hora atual no seu instante de tempo correspondente.
+    public int conversorTempo(String hora, String minuto){
         
         int h = Integer.valueOf(hora)*4;
         int m = Integer.valueOf(minuto);
@@ -171,65 +189,62 @@ public class AgentSourceEnergy extends Agent{
         return h+m;
     }
     
-        public class RecebeRequestLoad extends CyclicBehaviour {//este é um comportamento ciclico
-        @Override
-            public void action() {
-                
-                MessageTemplate protocolo = MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
-                MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
-                MessageTemplate mt = MessageTemplate.and(protocolo, performativa);
-                Load load = new Load();
-                Double geracao = 0.0;
-                ACLMessage msg = myAgent.receive(mt);
-                
-                if (msg != null) {
-                    /*A classe StringTokemizer permite que você separe ou encontre palavras (tokens) em qualquer formato. */
-                    StringTokenizer st = new StringTokenizer(msg.getContent());
-                    String conteudo = st.nextToken(); //pego primeiro token.
+    public class RecebeRequestLoad extends CyclicBehaviour {//este é um comportamento ciclico
+    @Override
+        public void action() {
 
-                    if(conteudo.equalsIgnoreCase("registro")){ // se for para registrar no banco de dados
-                        
-                        Long equipamentoId = Long.parseLong(msg.getSender().getLocalName());
-                        Double potencia = Double.parseDouble(st.nextToken()); //pego o segundo token
-                        int tempo = Integer.parseInt(st.nextToken()); //pego o terceiro token
+            MessageTemplate protocolo = MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
+            MessageTemplate mt = MessageTemplate.and(protocolo, performativa);
+            Load load = new Load();
+            Double geracao = 0.0;
+            ACLMessage msg = myAgent.receive(mt);
+
+            if (msg != null) {
+                /*A classe StringTokemizer permite que você separe ou encontre palavras (tokens) em qualquer formato. */
+                StringTokenizer st = new StringTokenizer(msg.getContent());
+                String conteudo = st.nextToken(); //pego primeiro token.
+
+                if(conteudo.equalsIgnoreCase("R")){ // se for para registrar no banco de dados
+
+                    Long equipamentoId = Long.parseLong(msg.getSender().getLocalName());
+                    Double potencia = Double.parseDouble(st.nextToken()); //pego o segundo token
+                    int tempo = Integer.parseInt(st.nextToken()); //pego o terceiro token
+                    
+                    try {
+                        geracao = verificaGeracaoEnergia();
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    
+                    load.setEquipamentoId(equipamentoId);
+                    load.setPotencia(potencia);
+                    load.setTempo(tempo);
+                    load.setSchedule(null);
+                    
+                    if(geracao != -1){
+                        load.setFonteEnergia(Integer.valueOf(myAgent.getLocalName()));
+                    }else{
+                        load.setFonteEnergia(0);
+                    }
+                    // Envia mensagem indicando Registro no Banco de Dados esem alteração.
+                    myAgent.send(gerarMensagem(load,"R","N"));
+
+                }else{
+                    if(conteudo.equalsIgnoreCase("1")){ // Caso a mensagem contenha conteúdo = 1 é porque a carga será acionada no próximo ciclo.
                         try {
-                            geracao = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
+                            geracao = verificaGeracaoEnergia();
                         } catch (InterruptedException | ExecutionException ex) {
                             Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
                         }
-                        load.setEquipamentoId(equipamentoId);
-
-                        if(geracao != -1){
-                            load.setFonteEnergia(Integer.valueOf(myAgent.getLocalName()));
-                        }else{
-                            load.setFonteEnergia(0);
-                        }
-                        
-                        load.setPotencia(potencia);
-                        load.setTempo(tempo);
-                        load.setSchedule(null);
-                        
-                        myAgent.send(gerarMensagem(load,"C","N"));
-                        
-                    }else{
-                        if(conteudo.equalsIgnoreCase("iniciar")){
-                            try {
-                                geracao = verificaGeracaoEnergia(Integer.valueOf(myAgent.getLocalName()));
-                            } catch (InterruptedException | ExecutionException ex) {
-                                Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                            String alteracao = verificarCapacidadeAtual(Integer.valueOf(myAgent.getLocalName()), geracao);
-                            myAgent.send(gerarMensagem(load,"A",alteracao));
-                            
-                        }
+                        String alteracao = verificarCapacidadeAtual(Integer.valueOf(myAgent.getLocalName()), geracao);
+                        load = LoadDAO.getInstance().findByEquipamentoId(Long.valueOf(msg.getSender().getLocalName()));
+                        myAgent.send(gerarMensagem(load,"A",alteracao));
                     }
-                }else{
-                    block();
                 }
+            }else{
+                block();
             }
         }
+    }
 }
-/*
-distanciaMaxima = (Math.random()*10);
-System.out.println("Central " + getLocalName ( ) + ": Aguardando alarmes..." ) ;
-*/

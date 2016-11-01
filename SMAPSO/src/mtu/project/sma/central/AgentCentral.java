@@ -19,6 +19,7 @@ import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 import java.util.StringTokenizer;
+import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.dao.ScheduleDAO;
 import mtu.project.db.model.Load;
 
@@ -57,8 +58,8 @@ public class AgentCentral extends Agent {
             try{
                 //Pesquisando pelos Agentes Load ativos.
                 DFAgentDescription[] agentesLoad = DFService.search(this, pesquisarAgentesLoad);
-                for(int i = 0; i<agentesLoad.length; i++){
-                    msg.addReceiver(agentesLoad[i].getName());
+                for (DFAgentDescription agentesLoad1 : agentesLoad) {
+                    msg.addReceiver(agentesLoad1.getName());
                 }
             }catch(FIPAException e){
                 e.printStackTrace();
@@ -76,7 +77,7 @@ public class AgentCentral extends Agent {
             /*A classe IniciarAgentsLoad (abaixo) extende a classe AchieveREInitiator, 
             ela atua como o iniciador do protoloco. Seu metodo construtor envia automaticamente 
             a mensagem que esta no objeto msg*/
-            comportamento.addSubBehaviour(new WakerBehaviour(this, 3000){
+            comportamento.addSubBehaviour(new WakerBehaviour(this, 30000){
                 @Override
                 protected void onWake ( ){
                     System.out.println("Agentes Load serão registrados!");
@@ -85,24 +86,23 @@ public class AgentCentral extends Agent {
             comportamento.addSubBehaviour(new IniciarAgentsLoad(this, msg));
             comportamento.addSubBehaviour(new RecebeRequest());
             addBehaviour(comportamento);
-            
-            
         }else{
             System.out.println("Especifique o procedimento inicial a ser realizado." ) ;
         }
     }
     
+    //Método responsável por inserir a carga no Banco de Dados, caso já esteja cadastrada o método não faz nada.
     public void inserirBancoDados(Load load){
-       // LoadDAO.getInstance().save(load);
-        System.out.println("Carga inserida no Banco de Dados." );
+        LoadDAO.getInstance().saveWithFindById(load);
+        System.out.println("Carga já inserida no Banco de Dados, aguardando o Schedule!" );
     }
     
+    //Método responsável por remover o Schedule da carga devido a acorrência de Falha.
     public void zerarSchedule(Load load){
         Integer id = Integer.valueOf(load.getEquipamentoId().toString());
         ScheduleDAO.getInstance().removeAll(id);
         System.out.println("Schedule atualizado no Banco de Dados." );
-    }
-    
+    }    
     
     public class IniciarAgentsLoad extends AchieveREInitiator{
         
@@ -163,36 +163,35 @@ public class AgentCentral extends Agent {
             MessageTemplate protocolo = MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
             MessageTemplate mt = MessageTemplate.and(protocolo, performativa);
-            
+            //Método para capturar a mensagem recebida.
             ACLMessage msg = myAgent.receive(mt);
             
             if (msg != null) {
-                // processar a mensagem recebida
+                // tipo da mensagem indica se ela é Tipo 1: Agente Load ou Tipo 2: Agente SE.
                 int tipo = 0;
                 ACLMessage resposta = msg.createReply();
-                //System.out.println(msg.getContent());
                 try{
-                    //Verificando se é um Agente Load (tipo = 1).
+                    //Verificando se o Sender é um Agente Load (tipo = 1).
                     DFAgentDescription pesquisarAgentesLoad = new DFAgentDescription();
                     ServiceDescription sdAgentesLoad = new ServiceDescription();
                     sdAgentesLoad.setType("Agente Load");
                     pesquisarAgentesLoad.addServices(sdAgentesLoad);
                     DFAgentDescription[] agentesLoad = DFService.search(myAgent, pesquisarAgentesLoad);
                     
-                    for(int i = 0; i<agentesLoad.length; i++){
-                        if(agentesLoad[i].getName().getName().equals(msg.getSender().getName())){
-                           tipo = 1;                            
+                    for (DFAgentDescription agentesLoad1 : agentesLoad) {
+                        if (agentesLoad1.getName().getName().equals(msg.getSender().getName())) {
+                            tipo = 1;                            
                         }
                     }
-                    //Verificando se é um Agente SE (tipo = 2).
+                    //Verificando se o Sender é um Agente SE (tipo = 2).
                     DFAgentDescription pesquisarAgentesSE = new DFAgentDescription();
                     ServiceDescription sdAgentesSE = new ServiceDescription();
                     sdAgentesSE.setType("Agente SE");
                     pesquisarAgentesSE.addServices(sdAgentesSE);
                     DFAgentDescription[] agentesSE = DFService.search(myAgent, pesquisarAgentesSE);
                     
-                    for(int i = 0; i<agentesSE.length; i++){
-                        if(agentesSE[i].getName().getName().equals(msg.getSender().getName())){
+                    for (DFAgentDescription agentesSE1 : agentesSE) {
+                        if (agentesSE1.getName().getName().equals(msg.getSender().getName())) {
                             tipo = 2;                            
                         }
                     }
@@ -220,6 +219,14 @@ public class AgentCentral extends Agent {
                     }else{
                         if(situacao.equals("F")){ // Carga com falha
                             zerarSchedule(carga);
+                            CONTADOR++; //Incrementa contador informando que carga não está funcionando bem e que o algoritmo de balanceamento precisa ser executado.
+                            if(CONTADOR < 3){
+                                System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Mas ainda não será processada!");
+                            }else{
+                                CONTADOR = 0;
+                                System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Será processada agora!");
+                                //executar algoritmo
+                            }
                         }
                     }
                 }else{
@@ -238,12 +245,12 @@ public class AgentCentral extends Agent {
                         carga.setTempo(Integer.valueOf(tempo));
                         carga.setFonteEnergia(Integer.valueOf(fonteEnergia));
                         carga.setSchedule(null);
-
-                        if(!operacao.equals("C") && !operacao.equals("A")){ //Realizar cadastro de carga ou alteração
+                        //Realizar cadastro de carga (R) ou Informar alteração na geração de energia (A).
+                        if(!operacao.equals("R") && !operacao.equals("A")){ 
                             System.out.println("Agente Central não entendeu solicitação do Agente SE "+msg.getSender().getName());
                         }else{   
                             System.out.println("Agente Central concorda em realizar a solicitação do Agente SE "+msg.getSender().getName());
-                            if(operacao.equals("C")){ // Realizar cadastro de carga
+                            if(operacao.equals("R")){ // Realizar cadastro de carga
                                 try{
                                     if(equipamentoId.equals("") || potencia.equals("") || tempo.equals("")){
                                         System.out.println("Dados para registro da Carga "+equipamentoId+" incompletos! Solicitação está sendo recusada!");
@@ -254,15 +261,15 @@ public class AgentCentral extends Agent {
                                     System.out.println("Ocorreu uma falha com o Banco de Dados no cadastro da Carga "+equipamentoId);
                                 }
                             }else{
-                                if(alteracao.equals("S")){ // Se alteraçao S(sim), realizar alteração.
+                                if(alteracao.equals("S")){ // Se alteraçao S(Sim), incremento contador informando que houve alteração na geração de energia.
                                     try{
                                         CONTADOR++;
                                         if(CONTADOR < 3){
                                             System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Mas ainda não será processada!");
                                         }else{
                                             CONTADOR = 0;
-                                            //executar algoritmo
                                             System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Será processada agora!");
+                                            //executar algoritmo
                                         }
                                     }catch(Exception e){
                                         resposta.setContent("Ocorreu uma na execução do algoritmo!");
