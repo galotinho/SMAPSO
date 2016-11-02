@@ -6,6 +6,8 @@
 package mtu.project.sma;
 
 import jade.Boot;
+import mtu.project.db.dao.LoadDAO;
+import mtu.project.db.model.Load;
 
 /**
  *
@@ -30,7 +32,7 @@ public class SMAPSO {
                               };		
         Boot.main(parametros);
        */ 
-       
+       /*
         String[] parametros = { "-gui", "-local-host", "127.0.0.1", "-container", 
                                 "-container-name","Load2-SE1", 
                                 "2:mtu.project.sma.load.AgentLoad(178.18, 45, 1, 5000, END_DEVICE4, "+porta+", 9600);"
@@ -44,6 +46,9 @@ public class SMAPSO {
 				   "-container-name", "Coordenador",				
 				   "Central:mtu.project.sma.central.AgentCentral(iniciar)"};
 	Boot.main(novoContainer);
-        	
+        */
+        Load carga = LoadDAO.getInstance().findByEquipamentoId(2L);
+        System.out.println(carga.getPotencia());
+                
     }
 }

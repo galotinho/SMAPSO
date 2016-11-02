@@ -22,6 +22,7 @@ import java.util.StringTokenizer;
 import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.dao.ScheduleDAO;
 import mtu.project.db.model.Load;
+import mtu.project.pso.Processamento;
 
 public class AgentCentral extends Agent {
 
@@ -102,7 +103,11 @@ public class AgentCentral extends Agent {
         Integer id = Integer.valueOf(load.getEquipamentoId().toString());
         ScheduleDAO.getInstance().removeAll(id);
         System.out.println("Schedule atualizado no Banco de Dados." );
-    }    
+    } 
+    
+    public void executarAlgoritmo(){
+        new Processamento().execute();
+    }
     
     public class IniciarAgentsLoad extends AchieveREInitiator{
         
@@ -225,7 +230,7 @@ public class AgentCentral extends Agent {
                             }else{
                                 CONTADOR = 0;
                                 System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Será processada agora!");
-                                //executar algoritmo
+                                executarAlgoritmo();
                             }
                         }
                     }
@@ -269,7 +274,7 @@ public class AgentCentral extends Agent {
                                         }else{
                                             CONTADOR = 0;
                                             System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Será processada agora!");
-                                            //executar algoritmo
+                                            executarAlgoritmo();
                                         }
                                     }catch(Exception e){
                                         resposta.setContent("Ocorreu uma na execução do algoritmo!");
