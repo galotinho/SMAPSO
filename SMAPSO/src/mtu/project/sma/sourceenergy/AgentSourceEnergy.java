@@ -134,21 +134,26 @@ public class AgentSourceEnergy extends Agent{
     public String verificarCapacidadeAtual(int fonte, Double geracao){
         Date dataAtual = new Date();
         Locale locale = new Locale("pt","BR");
+        //Data usada para conversão em instantes de tempo (1 à 96).
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
         String currentTime = sdf.format(dataAtual);
-        
+        //Data usada para comparação com a data no Banco de Dados.
+        java.text.SimpleDateFormat data = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        String currentData = data.format(dataAtual);
+        //Extração da hora do minuto para conversão em instantes de tempo.
         StringTokenizer st = new StringTokenizer(currentTime);
         String hora = st.nextToken();
         String minuto = st.nextToken();
         int tempo = conversorTempo(hora, minuto);
-        Double geracaoPrevista = 0.0;
+        
+        Double geracaoPrevista = -1.0;
         // Busca no Banco de Dados os dados de geração do gerador de energia..
         SourceEnergy source = SourceEnergyDAO.getInstance().findBySourceId(Long.valueOf((long)fonte));
-                
+        
         for(SourceSchedule s: source.getSourceSchedule()) {
-            //Se a data for encontrada na comparação, o valor 0 é retornado.
-            if(s.getDataAtual().compareTo(dataAtual) == 0){
-                //É realizada a busca da geração prevista para o tempo atual.
+            //Se a data for encontrada na comparação é realizada a busca pelo instante de tempo.
+            if(s.getDataAtual().toString().equals(currentData)){
+                //É realizada a busca da geração prevista para o instante de tempo atual.
                 if(s.getTempo() == tempo){
                     geracaoPrevista = s.getPotenciaPrevista();
                 }
@@ -159,7 +164,7 @@ public class AgentSourceEnergy extends Agent{
             return "S";
         }else{
             // Se Geração mais 20% for menor que o previsto é porque a geração não é satisfatória, então retorna S indicando que o algoritmo de balanceamento precisa saber.
-            if((geracao*1.2) < geracaoPrevista){
+            if(((geracao*1.2) < geracaoPrevista) || geracaoPrevista == -1.0 ){
                 return "S";
             }else{
                 return "N";
@@ -190,7 +195,7 @@ public class AgentSourceEnergy extends Agent{
     }
     
     public class RecebeRequestLoad extends CyclicBehaviour {//este é um comportamento ciclico
-    @Override
+        @Override
         public void action() {
 
             MessageTemplate protocolo = MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);

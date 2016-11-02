@@ -23,22 +23,27 @@ public class SMAPSO {
            Agente SE: Nome da Fonte, Tipo da Fonte (1-Fotovoltaica, 2- Wind Power), Dispositivo, Porta, Rate
         */
         String porta = "COM12";
-        
+       /*
         String[] parametros = { "-gui", "-local-host", "127.0.0.1", "-name", "Factory",
-                                "-container-name", "Loads-SourceEnergy",
- 				"3:mtu.project.sma.load.AgentLoad(354.98, 27, 1, 1, END_DEVICE4, "+porta+", 9600);"
-                             +  "2:mtu.project.sma.load.AgentLoad(178.18, 45, 1, 5000, END_DEVICE4, "+porta+", 9600);"
-                             +  "1:mtu.project.sma.sourceenergy.AgentSourceEnergy(Fotovoltaica1, 1, END_DEVICE4, "+porta+", 9600);"
-                              //+ "3:mtu.project.sma.load.AgentLoad(427.46, 51, 0)"
+                                "-container-name", "Load3",
+ 				"3:mtu.project.sma.load.AgentLoad(354.98, 27, 0, 1, END_DEVICE4, "+porta+", 9600);"
                               };		
-        Boot.main(parametros);		
+        Boot.main(parametros);
+       */ 
+       
+        String[] parametros = { "-gui", "-local-host", "127.0.0.1", "-container", 
+                                "-container-name","Load2-SE1", 
+                                "2:mtu.project.sma.load.AgentLoad(178.18, 45, 1, 5000, END_DEVICE4, "+porta+", 9600);"
+                              + "1:mtu.project.sma.sourceenergy.AgentSourceEnergy(Fotovoltaica1, 1, END_DEVICE4, "+porta+", 9600);"
+                              
+                              };		
+        Boot.main(parametros);	
+        
 		
-        String[] novoContainer = { "-local-host", "127.0.0.1", "-container", 
+        String[] novoContainer = { "-local-host", "127.0.0.1", "-container",
 				   "-container-name", "Coordenador",				
 				   "Central:mtu.project.sma.central.AgentCentral(iniciar)"};
 	Boot.main(novoContainer);
-        
         	
     }
-    
 }

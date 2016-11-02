@@ -306,7 +306,7 @@ int rate;
             super(a, period);
             this.load = load;
             this.sleep = sleep;
-            setFixedPeriod(true); // método que faz com que o Ticker Behavior execute no mesmo tempo em todos os Agentes.
+            setFixedPeriod(true); // método que faz com que o Ticker Behavior execute o mesmo tempo em todos os Agentes.
         }
 
         @Override
