@@ -32,8 +32,9 @@ public class SMAPSO {
                               
                               };		
         Boot.main(parametros);	
+        */
+       
         
-       */
         String[] parametros = { "-host", "141.219.123.44", "-container",
                                 "-container-name","Router1", 
                                 "1:mtu.project.sma.sourceenergy.AgentSourceEnergy(Fotovoltaica1, 1, END_DEVICE1, "+porta+", 9600);"
@@ -41,7 +42,7 @@ public class SMAPSO {
                               
                               };		
         Boot.main(parametros);	
-    /*
+    
       
     /*
         String[] parametros = { "-gui", "-host", "141.219.123.44", "-container",
