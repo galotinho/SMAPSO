@@ -29,6 +29,7 @@ import mtu.project.pso.Processamento;
 public class AgentCentral extends Agent implements Configuracao{
 
     private int CONTADOR;
+    private int SCHEDULES = 0;
     
     @Override
     protected void setup( ){
@@ -99,7 +100,8 @@ public class AgentCentral extends Agent implements Configuracao{
         LoadDAO.getInstance().saveWithFindById(load);
         List<Load> loads = LoadDAO.getInstance().listAllLoads();
         
-        if(loads.size() == QUANTIDADE){
+        if(loads.size() == QUANTIDADE && SCHEDULES == 0){
+            SCHEDULES = 1;
             executarAlgoritmo();
         }else{
             System.out.println("Carga já inserida no Banco de Dados, aguardando o Schedule!" );
@@ -107,7 +109,7 @@ public class AgentCentral extends Agent implements Configuracao{
         
     }
     
-    //Método responsável por remover o Schedule da carga devido a acorrência de Falha.
+    //Método responsável por remover o Schedule da carga devido a corrência de Falha.
     public void zerarSchedule(Load load){
         Integer id = Integer.valueOf(load.getEquipamentoId().toString());
         ScheduleDAO.getInstance().removeAll(id);
