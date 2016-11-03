@@ -77,7 +77,7 @@ public class LoadDAO {
             carga = entityManager.find(Load.class, load.getEquipamentoId());
             if(carga == null){
                 entityManager.getTransaction().begin();
-                entityManager.persist(carga);
+                entityManager.persist(load);
                 entityManager.getTransaction().commit();
             }
         }catch (Exception e) {

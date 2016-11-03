@@ -18,13 +18,15 @@ import jade.lang.acl.ACLMessage;
 import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
+import java.util.List;
 import java.util.StringTokenizer;
 import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.dao.ScheduleDAO;
 import mtu.project.db.model.Load;
+import mtu.project.pso.Configuracao;
 import mtu.project.pso.Processamento;
 
-public class AgentCentral extends Agent {
+public class AgentCentral extends Agent implements Configuracao{
 
     private int CONTADOR;
     
@@ -95,7 +97,14 @@ public class AgentCentral extends Agent {
     //Método responsável por inserir a carga no Banco de Dados, caso já esteja cadastrada o método não faz nada.
     public void inserirBancoDados(Load load){
         LoadDAO.getInstance().saveWithFindById(load);
-        System.out.println("Carga já inserida no Banco de Dados, aguardando o Schedule!" );
+        List<Load> loads = LoadDAO.getInstance().listAllLoads();
+        
+        if(loads.size() == QUANTIDADE){
+            executarAlgoritmo();
+        }else{
+            System.out.println("Carga já inserida no Banco de Dados, aguardando o Schedule!" );
+        }
+        
     }
     
     //Método responsável por remover o Schedule da carga devido a acorrência de Falha.

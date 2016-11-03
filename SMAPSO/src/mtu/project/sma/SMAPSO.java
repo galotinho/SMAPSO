@@ -24,16 +24,16 @@ public class SMAPSO {
         */
         String porta = "/dev/ttyUSB0";
         //String porta = "COM3";
-        /*
+        
         String[] parametros = { "-name", "Factory",
                                 "-container-name","Router2", 
-                                "3:mtu.project.sma.load.AgentLoad(178.18, 45, 1, 12000, END_DEVICE3, "+porta+", 9600);"
-                              + "4:mtu.project.sma.load.AgentLoad(178.18, 45, 1, 24000, END_DEVICE4, "+porta+", 9600);"
+                                "3:mtu.project.sma.load.AgentLoad(178.18, 45, 0, 12000, END_DEVICE3, "+porta+", 9600);"
+                              + "4:mtu.project.sma.load.AgentLoad(238.18, 55, 1, 24000, END_DEVICE4, "+porta+", 9600);"
                               
                               };		
         Boot.main(parametros);	
         
-       */
+       /*
         String[] parametros = { "-host", "141.219.123.44", "-container",
                                 "-container-name","Router1", 
                                 "1:mtu.project.sma.sourceenergy.AgentSourceEnergy(Fotovoltaica1, 1, END_DEVICE1, "+porta+", 9600);"
@@ -41,7 +41,7 @@ public class SMAPSO {
                               
                               };		
         Boot.main(parametros);	
-    
+    /*
       
     /*
         String[] parametros = { "-gui", "-name", "Factory",
