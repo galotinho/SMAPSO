@@ -43,7 +43,7 @@ public class Processamento implements Configuracao{
         
         Map particulaInicial = new GerarParticulaInicial().criarParticulaInicial(dados);
         new InserirParticulaBD().inserirParticula(particulaInicial, loads);
-        
+        /*
         //Exibir soma de potência dos grupos da particula inicial.
         int id = 0;
         for(Double grupo : (List<Double>)Metricas.calcularPotenciaTotalPorGrupo(particulaInicial)){
@@ -95,6 +95,7 @@ public class Processamento implements Configuracao{
         exibirMelhorGlobal();
         processarResultado(particulaInicial, par);
         System.out.println(demandaMaxima+" "+demandaMinima);
+    */
     }
     
     public void processarResultado(Map particulaInicial, ProcessarPares par){

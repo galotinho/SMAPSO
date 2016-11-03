@@ -47,8 +47,7 @@ public class InserirParticulaBD {
                 }
             }
             load.setSchedule(listaTempo);
-            System.out.println(listaTempo.size());
-            LoadDAO.getInstance().save(load);
+            LoadDAO.getInstance().update(load);
         }
     }
     

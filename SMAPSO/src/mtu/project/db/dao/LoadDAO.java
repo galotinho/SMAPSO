@@ -5,9 +5,11 @@
  */
 package mtu.project.db.dao;
 
+import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.Query;
 import mtu.project.db.model.Load;
 
 /**
@@ -96,6 +98,26 @@ public class LoadDAO {
         }       
     }
     
+    public List<Load> listAllLoads() {
+        Query query = entityManager.createQuery("SELECT l FROM Load l", Load.class);
+ 
+        return query.getResultList();
+    }
+    
+    public void removeAll(){
+        
+        try{
+            entityManager.getTransaction().begin();
+            Query query = entityManager.createNativeQuery("DELETE FROM multiagentsystem.load");
+            query.executeUpdate();                      
+            entityManager.getTransaction().commit();
+        }catch (Exception e) {
+            e.printStackTrace();
+            entityManager.getTransaction().rollback();
+        }       
+    }
+    
+    
     public Load findByEquipamentoId(Long equipamentoId){
         Load carga = null;
         try{
@@ -106,5 +128,7 @@ public class LoadDAO {
        
         return carga;
     }
+    
+    
               
 }

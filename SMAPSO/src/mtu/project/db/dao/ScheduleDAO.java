@@ -11,7 +11,6 @@ import javax.persistence.Persistence;
 import javax.persistence.Query;
 import mtu.project.db.model.Load;
 import mtu.project.db.model.Schedule;
-import mtu.project.pso.particula.Carga;
 /**
  *
  * @author Rafael

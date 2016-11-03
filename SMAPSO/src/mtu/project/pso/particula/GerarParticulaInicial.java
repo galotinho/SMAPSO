@@ -68,7 +68,7 @@ public class GerarParticulaInicial implements Configuracao{
                  do{
                     
                      condicao = false; // Variável responsável por avaliar se a carga já pertence ao grupo.
-                     indice = gerador.nextInt(dados.size()-1); //Gera um índice aleatório.
+                     indice = gerador.nextInt(dados.size()); //Gera um índice aleatório.
                      dado = dados.get(indice); //Recupera o dado referente ao índice gerado anteriormente.
                     
                      for(Carga dadosLocal1 : dadosLocal) {

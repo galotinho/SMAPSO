@@ -10,6 +10,8 @@ import mtu.project.pso.util.EscreverCargas;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import mtu.project.db.dao.LoadDAO;
+import mtu.project.db.model.Load;
 
 /**
  *
@@ -19,53 +21,34 @@ public class GerarCargas implements Configuracao{
     
     List<Carga> dados = new ArrayList<>();
     Random gerador = new Random();
-    static int equipamentoId; //Identificador da Load
-    
+        
     public GerarCargas(){
         super();
     }
-    //Método para gerar uma carga com Prioridade, Potência e Tempos de Uso aleatórios.
-    public Carga criarCarga(){
         
-        Double potencia = gerador.nextDouble()*100;
-        int tempo = gerador.nextInt(QTD_MIN_DIA+1);
-        
-        while(tempo == 0){
-            tempo = gerador.nextInt(QTD_MIN_DIA+1);
-        }
-        
-        Carga carga = new Carga(-1, potencia, tempo, 0, equipamentoId++ );
-        return carga;
-    }
-    
     public List<Carga> gerarListaDeCargas(){
         
         List<Carga> cargaArquivo = new ArrayList<>();
         Carga carga, cargaArquivoEscrita;
-        /* Aloca o equipamento em X STEPs de tempo, dependendo do tempo 
+        List<Load> loads = LoadDAO.getInstance().listAllLoads();
+        Load load;
+        int equipamentoId;
+         /* Aloca o equipamento em X STEPs de tempo, dependendo do tempo 
          * total que o equipamento deverá funcionar.*/
-        for(int i = 0; i<QUANTIDADE; i++){
+        for(int i = 0; i<loads.size(); i++){
             
-            carga = criarCarga();            
-            int step = carga.getTempo();
+            load = loads.get(i);
+            equipamentoId = Integer.valueOf(String.valueOf((long)load.getEquipamentoId()));
             
-            if(step < STEP){
-               step = 1;
-            }else{               
-                if(step % STEP == 0){
-                   step = carga.getTempo()/STEP;
-                }else{                
-                   step = (carga.getTempo()/STEP)+1;
-                }
-            }
+            carga = new Carga(-1, load.getPotencia(), load.getTempo(), 0, equipamentoId);
             
             cargaArquivoEscrita = carga;
-            cargaArquivoEscrita.setTempo(step);
+            cargaArquivoEscrita.setTempo(load.getTempo());
             cargaArquivo.add(cargaArquivoEscrita);
-            
+                                    
             Carga c = new Carga();
              
-            for(int j = 1; j <= step; j++){
+            for(int j = 1; j <= carga.getTempo(); j++){
                 if(carga.getPrioridade() == -1){                    
                     c.setPrioridade(gerador.nextInt(4));                    
                 }
