@@ -41,14 +41,14 @@ public class SMAPSO {
                               };		
         Boot.main(parametros);	
         
-		
-        String[] novoContainer = { "-local-host", "127.0.0.1", "-container",
-				   "-container-name", "Coordenador",				
-				   "Central:mtu.project.sma.central.AgentCentral(iniciar)"};
+	*/	
+        String[] novoContainer = {"-gui", "-host", "141.219.123.44", "-container",
+				   "-container-name", "Coordenador",
+                                   "2:mtu.project.sma.load.AgentLoad(178.18, 45, 1, 48000, END_DEVICE2, "+porta+", 9600);"
+				   + "Central:mtu.project.sma.central.AgentCentral(iniciar)"};
 	Boot.main(novoContainer);
-        */
-        Load carga = LoadDAO.getInstance().findByEquipamentoId(2L);
-        System.out.println(carga.getPotencia());
+        
+        
                 
     }
 }

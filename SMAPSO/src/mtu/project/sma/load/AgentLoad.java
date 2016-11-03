@@ -90,7 +90,7 @@ int rate;
         addBehaviour(new CapturaRequestCentral (this, padrao, load));
         
         //Adiciona o comportamento responsável por realizar todo o ciclo de ações do Agente a cada 10 minutos.
-        addBehaviour(new ScheduleAgentLoad (this, 10000, load, sleep));
+        addBehaviour(new ScheduleAgentLoad (this, 300000, load, sleep));
     }
     
     // Método responsável por enviar a requisição ao dispositivo remoto e esperar sua resposta.
