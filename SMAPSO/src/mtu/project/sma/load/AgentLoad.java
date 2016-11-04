@@ -144,9 +144,9 @@ int rate;
         //Traz do Banco de Dados todo os dados da carga.    
         Load carga = LoadDAO.getInstance().findByEquipamentoId(load.getEquipamentoId());
         
-        System.out.println("Agente Load "+getLocalName()+" Schedule vazio? "+carga.getSchedule().isEmpty());
         //Verifica se a carga já existe no Banco de Dados.
         if(carga != null){
+            System.out.println("Agente Load "+getLocalName()+" Schedule vazio? "+carga.getSchedule().isEmpty());
             return !carga.getSchedule().isEmpty(); //Verifica se já existe Schedule associado à carga.
         }else{
             return false;
