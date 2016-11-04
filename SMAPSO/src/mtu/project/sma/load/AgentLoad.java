@@ -110,6 +110,8 @@ int rate;
         }else{
             resultado = 0;
         }
+        
+        System.out.println("Agente Load "+getLocalName()+" Status: "+tasks.get(0).get());
         //Finaliza a pool de Threads.
         executorService.shutdown();
         
@@ -123,14 +125,14 @@ int rate;
             comando = "ligar";
         }else{
             comando = "desligar";
-        }        
-        
+        }  
         //Cria uma pool de threads e adiciona a Thread para fazer uso da porta serial.
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         List<Callable<String>> lst = new ArrayList<>();
         lst.add(new ConexaoXBee(dispositivo, comando, porta, rate));
         //Executa a Thread e espera o resultado de retorno.
-        executorService.invokeAll(lst);
+        List<Future<String>> tasks = executorService.invokeAll(lst);
+        System.out.println("Agente Load "+getLocalName()+" Comando: "+tasks.get(0).get());
         
         //Finaliza a pool de Threads.
         executorService.shutdown();
@@ -140,6 +142,8 @@ int rate;
     public boolean verificaTemposAlocados(Load load){
         //Traz do Banco de Dados todo os dados da carga.    
         Load carga = LoadDAO.getInstance().findByEquipamentoId(load.getEquipamentoId());
+        
+        System.out.println("Agente Load "+getLocalName()+" Schedule vazio? "+carga.getSchedule().isEmpty());
         //Verifica se a carga já existe no Banco de Dados.
         if(carga != null){
             return !carga.getSchedule().isEmpty(); //Verifica se já existe Schedule associado à carga.
@@ -170,7 +174,7 @@ int rate;
             }
         }
         int status = verificaStatusDaCarga(); // Verifica status da carga no momento atual 1:Ligado 0:Desligado.      
-        
+        System.out.println("Agente Load "+getLocalName()+" Status da carga: "+status+"  Acionamento: "+acionamento);
         return status == acionamento;
     }
     
@@ -227,6 +231,8 @@ int rate;
             }
             int status = verificaStatusDaCarga(); // Verifica status da carga no momento atual 1:Ligado 0:Desligado.  
             //Return: 1 para ligar a carga, 2 para desligar a carga, 0 para não fazer nada.
+            System.out.println("Agente Load "+getLocalName()+" Status da carga Proximo Ciclo: "+status+"  Acionamento Proximo Ciclo: "+acionamento);
+        
             if(status == 0 && acionamento == 1){ // Verifica-se se na próximo instante de tempo a carga deverá estar ligada.
                 return 1;
             }else{
@@ -280,7 +286,7 @@ int rate;
                     }
                     // envia mensagem NOT UNDERSTOOD
                 }else{
-                    throw new NotUnderstoodException ( "O Agente Load não entendeu sua solicitação." );
+                    throw new NotUnderstoodException ("O Agente Load não entendeu sua solicitação." );
                 }
             }
 
@@ -341,10 +347,13 @@ int rate;
                     try {
                         if(verificaEstadoAtual(load)){ //Verifica se o status da carga é a mesma que está cadastrada no schedule da carga. Caso não, uma mensagem de falha é enviada para o Agente Central.
                             int acao = verificaMudancaProxCiclo(load);
+                            System.out.println("Agente Load "+getLocalName()+" Mudanca proximo Ciclo?: "+acao);
                             if(acao != 0){ //Verifica se a carga será acionada/desligada no próximo ciclo. 
                                 if(load.getFonteEnergia()!=0){//Caso sim, envia uma mensagem 1-acionar ou 2-desligar para o Agente SE se estiver ligado a um.
                                     msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
                                     msg.setContent(String.valueOf(acao));
+                                    System.out.println("Agente Load "+getLocalName()+" mensagem de acionamento para Agente SE "+msg.getAllReceiver().next().toString());
+                            
                                     myAgent.send(msg);
                                 }
                                 //Aciona/desliga a carga no próximo ciclo.   
@@ -368,6 +377,8 @@ int rate;
                             //Carga com Falha, envia mensagem de falha para o Agente Central.
                             situacao = "F";
                             msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia());
+                            System.out.println("Agente Load "+getLocalName()+" mensagem de falha para Agente Central "+msg.getAllReceiver().next().toString()+" "+msg.getContent());
+                            
                             myAgent.send(msg);
                         }
                     } catch (InterruptedException | ExecutionException ex) {
@@ -377,6 +388,8 @@ int rate;
                     if(load.getFonteEnergia() != 0){ //Envia uma mensagem solicitando registro/atualização no banco de dados ao Agente SE.
                         msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
                         msg.setContent("R "+load.getPotencia()+" "+load.getTempo());
+                        System.out.println("Agente Load "+getLocalName()+" mensagem de registro para Agente SE "+msg.getAllReceiver().next().toString()+" "+msg.getContent());
+                            
                         myAgent.send(msg);
                     }else{//Envia uma mensagem solicitando cadastro ou update no banco de dados ao Agente Central.
                         //Adicionando Agente Central como destinatário.
@@ -396,6 +409,8 @@ int rate;
                         //Registrar Carga, envia mensagem de registro para o Agente Central.
                         situacao = "R";
                         msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" 0");
+                        System.out.println("Agente Load "+getLocalName()+" mensagem de registro para Agente Central "+msg.getAllReceiver().next().toString()+" "+msg.getContent());
+                                               
                         myAgent.send(msg);
                     }
                 }

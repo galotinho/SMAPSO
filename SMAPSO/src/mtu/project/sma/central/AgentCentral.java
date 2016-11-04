@@ -97,6 +97,9 @@ public class AgentCentral extends Agent implements Configuracao{
     
     //Método responsável por inserir a carga no Banco de Dados, caso já esteja cadastrada o método não faz nada.
     public void inserirBancoDados(Load load){
+        
+        System.out.println("Inserir carga "+load.getEquipamentoId());
+        
         LoadDAO.getInstance().saveWithFindById(load);
         List<Load> loads = LoadDAO.getInstance().listAllLoads();
         

@@ -107,6 +107,8 @@ public class AgentSourceEnergy extends Agent{
         String alteracao = alt; //S = Sim e N = Não
         String dados = operacao+" "+load.getEquipamentoId().toString()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia()+" "+alteracao;
         
+        System.out.println("Agente SE "+getLocalName()+": "+dados);
+        
         return dados;
     }
     
@@ -123,6 +125,8 @@ public class AgentSourceEnergy extends Agent{
         List<Future<String>> tasks = executorService.invokeAll(lst);
         // Atribui-se o valor lido no dispositivo à variável Resultado.
         resultado = Double.valueOf(tasks.get(0).get());
+        
+        System.out.println("Agente SE "+getLocalName()+": "+resultado);
         
         //Finaliza a pool de Threads.
         executorService.shutdown();
@@ -159,6 +163,9 @@ public class AgentSourceEnergy extends Agent{
                 }
             }
         }
+        
+        System.out.println("Agente SE "+getLocalName()+": Prevista - "+geracaoPrevista+" Geracao: "+geracao);
+        
         // Se Geração for -1 é porque o dispositivo não está funcionando, então retorna S indicando que o algoritmo de balanceamento precisa saber.
         if(geracao == -1){
             return "S";
@@ -202,9 +209,15 @@ public class AgentSourceEnergy extends Agent{
             MessageTemplate performativa = MessageTemplate.MatchPerformative(ACLMessage.REQUEST) ;
             MessageTemplate mt = MessageTemplate.and(protocolo, performativa);
             Load load = new Load();
-            Double geracao = 0.0;
             ACLMessage msg = myAgent.receive(mt);
-
+            
+            Double geracao = 0.0;
+            try {
+                geracao = verificaGeracaoEnergia();
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
             if (msg != null) {
                 /*A classe StringTokemizer permite que você separe ou encontre palavras (tokens) em qualquer formato. */
                 StringTokenizer st = new StringTokenizer(msg.getContent());
@@ -215,12 +228,6 @@ public class AgentSourceEnergy extends Agent{
                     Long equipamentoId = Long.parseLong(msg.getSender().getLocalName());
                     Double potencia = Double.parseDouble(st.nextToken()); //pego o segundo token
                     int tempo = Integer.parseInt(st.nextToken()); //pego o terceiro token
-                    
-                    try {
-                        geracao = verificaGeracaoEnergia();
-                    } catch (InterruptedException | ExecutionException ex) {
-                        Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
-                    }
                     
                     load.setEquipamentoId(equipamentoId);
                     load.setPotencia(potencia);
@@ -237,11 +244,6 @@ public class AgentSourceEnergy extends Agent{
 
                 }else{
                     if(conteudo.equalsIgnoreCase("1")){ // Caso a mensagem contenha conteúdo = 1 é porque a carga será acionada no próximo ciclo.
-                        try {
-                            geracao = verificaGeracaoEnergia();
-                        } catch (InterruptedException | ExecutionException ex) {
-                            Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
-                        }
                         String alteracao = verificarCapacidadeAtual(Integer.valueOf(myAgent.getLocalName()), geracao);
                         load = LoadDAO.getInstance().findByEquipamentoId(Long.valueOf(msg.getSender().getLocalName()));
                         myAgent.send(gerarMensagem(load,"A",alteracao));

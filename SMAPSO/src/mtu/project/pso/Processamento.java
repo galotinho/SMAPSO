@@ -51,7 +51,7 @@ public class Processamento implements Configuracao{
             dados = new GerarCargas().gerarListaDeCargas();
             loads = new ArrayList<>(dados);            
             particulaInicial = new GerarParticulaInicial().criarParticulaInicial(dados);
-        }
+        }/*
         potenciaMediaUnitaria = Metricas.potenciaMediaUnitaria(dados);
         potenciaMediaGeral = (potenciaMediaUnitaria*dados.size())/(QTD_MIN_DIA/STEP); 
 
@@ -106,7 +106,7 @@ public class Processamento implements Configuracao{
         exibirMelhorGlobal();
         processarResultado(particulaInicial, par);
         System.out.println(demandaMaxima+" "+demandaMinima);
-    
+    */
     }
         
     public void processarResultado(Map particulaInicial, ProcessarPares par){
