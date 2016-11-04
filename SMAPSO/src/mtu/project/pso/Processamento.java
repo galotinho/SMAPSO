@@ -17,6 +17,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import mtu.project.db.dao.LoadDAO;
+import mtu.project.db.dao.ScheduleDAO;
+import mtu.project.db.model.Load;
+import mtu.project.db.model.Schedule;
 import mtu.project.pso.util.InserirParticulaBD;
 
 /**
@@ -34,16 +38,23 @@ public class Processamento implements Configuracao{
        
     public void execute(){
         
-        //new GerarCargas().imprimirListaDeCargas();
-        List<Carga> dados = new GerarCargas().gerarListaDeCargas();
-        loads = new ArrayList<>(dados);
-        
+        List<Schedule> schedules = ScheduleDAO.getInstance().listAllSchedules();
+        Map particulaInicial = null;
+        List<Carga> dados = null;
+        if(schedules.isEmpty()){
+            //new GerarCargas().imprimirListaDeCargas();
+            dados = new GerarCargas().gerarListaDeCargas();
+            loads = new ArrayList<>(dados);            
+            particulaInicial = new GerarParticulaInicial().criarParticulaInicial(dados);
+            new InserirParticulaBD().inserirParticula(particulaInicial, loads);
+        }else{
+            dados = new GerarCargas().gerarListaDeCargas();
+            loads = new ArrayList<>(dados);            
+            particulaInicial = new GerarParticulaInicial().criarParticulaInicial(dados);
+        }
         potenciaMediaUnitaria = Metricas.potenciaMediaUnitaria(dados);
         potenciaMediaGeral = (potenciaMediaUnitaria*dados.size())/(QTD_MIN_DIA/STEP); 
-        
-        Map particulaInicial = new GerarParticulaInicial().criarParticulaInicial(dados);
-        new InserirParticulaBD().inserirParticula(particulaInicial, loads);
-        /*
+
         //Exibir soma de potência dos grupos da particula inicial.
         int id = 0;
         for(Double grupo : (List<Double>)Metricas.calcularPotenciaTotalPorGrupo(particulaInicial)){
@@ -95,9 +106,9 @@ public class Processamento implements Configuracao{
         exibirMelhorGlobal();
         processarResultado(particulaInicial, par);
         System.out.println(demandaMaxima+" "+demandaMinima);
-    */
-    }
     
+    }
+        
     public void processarResultado(Map particulaInicial, ProcessarPares par){
         //removo schedules antigos
         new InserirParticulaBD().removeSchedules(loads);

@@ -5,11 +5,11 @@
  */
 package mtu.project.db.dao;
 
+import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
-import mtu.project.db.model.Load;
 import mtu.project.db.model.Schedule;
 /**
  *
@@ -55,7 +55,7 @@ public class ScheduleDAO {
         try{
            entityManager.getTransaction().begin();
            if(!entityManager.contains(schedule)){
-                if(entityManager.find(Load.class, schedule.getId()) == null){
+                if(entityManager.find(Schedule.class, schedule.getId()) == null){
                     throw new Exception("Erro ao atualizar dados do schedule;");
                 }
            }
@@ -92,6 +92,12 @@ public class ScheduleDAO {
             e.printStackTrace();
             entityManager.getTransaction().rollback();
         }       
+    }
+    
+    public List<Schedule> listAllSchedules() {
+        Query query = entityManager.createQuery("SELECT s FROM Schedule s", Schedule.class);
+ 
+        return query.getResultList();
     }
     
     public Schedule findByScheduleId(Long id){

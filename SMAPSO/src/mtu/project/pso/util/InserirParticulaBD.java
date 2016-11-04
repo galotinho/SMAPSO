@@ -69,7 +69,7 @@ public class InserirParticulaBD {
                  List<Schedule> ls = new ArrayList<>();
                  Schedule s = new Schedule();
                  s.setPrioridade(c.getPrioridade());
-                 s.setTempo(schedule+1);
+                 s.setTempo(schedule++);
                  s.setLoad(load);
                  ls.add(s);
                  
