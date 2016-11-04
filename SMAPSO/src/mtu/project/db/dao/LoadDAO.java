@@ -121,7 +121,9 @@ public class LoadDAO {
     public Load findByEquipamentoId(Long equipamentoId){
         Load carga = null;
         try{
+            entityManager.getTransaction().begin();
             carga = entityManager.find(Load.class, equipamentoId);
+            entityManager.getTransaction().commit();
         }catch (Exception e) {
             e.printStackTrace();
         }       

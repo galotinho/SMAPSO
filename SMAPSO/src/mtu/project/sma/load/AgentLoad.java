@@ -18,7 +18,6 @@ import jade.lang.acl.ACLMessage;
 import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
-import static java.lang.ProcessBuilder.Redirect.to;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -153,8 +152,29 @@ int rate;
         }
     }
     
+     public boolean verificaEstadoAtual(Load load) throws InterruptedException, ExecutionException{
+            if(verificaEstado(load)){
+                return true;
+            }else{
+                int status = verificaStatusDaCarga();
+                if(status == 1){
+                    acionarDispositivo = 2;
+                    acionarDesligarCarga();
+                    acionarDispositivo = 0;
+                }else{
+                    if(status == 0){
+                        acionarDispositivo = 1;
+                        acionarDesligarCarga();
+                        acionarDispositivo = 0;
+                    }
+                    
+                }
+                return verificaEstado(load);
+            }
+     }
+    
     // Método responsável por verificar o estado atual da carga,ou seja, se está ligada ou desligada e se esse status condiz com o estado cadastrado no Banco de Dados.
-    public boolean verificaEstadoAtual(Load load) throws InterruptedException, ExecutionException{
+    public boolean verificaEstado(Load load) throws InterruptedException, ExecutionException{
         //Verifica-se qual a hora atual e armazena na variável currentTime no formato "HH mm".
         Date horaAtual = new Date();
         Locale locale = new Locale("pt","BR");
@@ -176,6 +196,8 @@ int rate;
         }
         int status = verificaStatusDaCarga(); // Verifica status da carga no momento atual 1:Ligado 0:Desligado.      
         System.out.println("Agente Load "+getLocalName()+" Status da carga: "+status+"  Acionamento: "+acionamento);
+        
+                
         return status == acionamento;
     }
     
