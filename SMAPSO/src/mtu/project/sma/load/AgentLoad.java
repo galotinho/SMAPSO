@@ -18,6 +18,7 @@ import jade.lang.acl.ACLMessage;
 import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
+import static java.lang.ProcessBuilder.Redirect.to;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -97,7 +98,8 @@ int rate;
     public int verificaStatusDaCarga() throws InterruptedException, ExecutionException{
         
         int resultado; //variável que guarda o retorno enviado pelo dispositivo.
-        
+        //System.setProperty("java.library.path", "/usr/lib/jni");
+
         String comando = "status";
         //Cria uma pool de threads e adiciona a Thread para fazer uso da porta serial.
         ExecutorService executorService = Executors.newFixedThreadPool(1);
@@ -110,7 +112,6 @@ int rate;
         }else{
             resultado = 0;
         }
-        
         System.out.println("Agente Load "+getLocalName()+" Status: "+tasks.get(0).get());
         //Finaliza a pool de Threads.
         executorService.shutdown();

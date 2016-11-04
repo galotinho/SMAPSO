@@ -36,7 +36,7 @@ public class ConexaoXBee implements Callable<String>{
             myDevice.open();
             return inicializarRedeZigbee(myDevice);
         }catch(Exception e){
-           return "false";
+            return "false";
         }
     }
     
@@ -80,10 +80,9 @@ public class ConexaoXBee implements Callable<String>{
                     contadorDeFalha++;
                     Thread.sleep(500);
                 }
-                if(contadorDeFalha == 20){
+                if(contadorDeFalha == 500){
                     resultado = "Falha";
                 }
-                
             }while(resultado.equals("false"));
         } catch (Exception e) {
             e.printStackTrace();
