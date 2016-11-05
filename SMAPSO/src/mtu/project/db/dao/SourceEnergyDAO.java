@@ -84,7 +84,9 @@ public class SourceEnergyDAO {
     public SourceEnergy findBySourceId(Long sourceId){
         SourceEnergy carga = null;
         try{
+            entityManager.getTransaction().begin();
             carga = entityManager.find(SourceEnergy.class, sourceId);
+            entityManager.getTransaction().begin();
         }catch (Exception e) {
             e.printStackTrace();
         }       

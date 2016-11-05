@@ -98,7 +98,9 @@ public class SourceScheduleDAO {
     public SourceSchedule findByEquipamentoId(Long id){
         SourceSchedule schedule = null;
         try{
+            entityManager.getTransaction().begin();
             schedule = entityManager.find(SourceSchedule.class, id);
+            entityManager.getTransaction().commit();
         }catch (Exception e) {
             e.printStackTrace();
         }      

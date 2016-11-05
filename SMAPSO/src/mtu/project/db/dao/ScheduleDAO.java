@@ -104,7 +104,9 @@ public class ScheduleDAO {
     public Schedule findByScheduleId(Long id){
         Schedule schedule = null;
         try{
+            entityManager.getTransaction().begin();
             schedule = entityManager.find(Schedule.class, id);
+            entityManager.getTransaction().commit();
         }catch (Exception e) {
             e.printStackTrace();
         }      
