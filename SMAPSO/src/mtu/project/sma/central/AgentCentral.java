@@ -98,25 +98,22 @@ public class AgentCentral extends Agent implements Configuracao{
     //Método responsável por inserir a carga no Banco de Dados, caso já esteja cadastrada o método não faz nada.
     public void inserirBancoDados(Load load){
         
-        System.out.println("Inserir carga "+load.getEquipamentoId());
-        
+        System.out.println("Inserir Carga "+load.getEquipamentoId()+"!");
         LoadDAO.getInstance().saveWithFindById(load);
-        List<Load> loads = LoadDAO.getInstance().listAllLoads();
+        System.out.println("Carga "+load.getEquipamentoId()+" já inserida no Banco de Dados, aguardando o Schedule!" );
         
+        List<Load> loads = LoadDAO.getInstance().listAllLoads();
         if(loads.size() == QUANTIDADE && SCHEDULES == 0){
             SCHEDULES = 1;
             executarAlgoritmo();
-        }else{
-            System.out.println("Carga já inserida no Banco de Dados, aguardando o Schedule!" );
-        }
-        
+        }        
     }
     
     //Método responsável por remover o Schedule da carga devido a corrência de Falha.
     public void zerarSchedule(Load load){
         Integer id = Integer.valueOf(load.getEquipamentoId().toString());
         ScheduleDAO.getInstance().removeAll(id);
-        System.out.println("Schedule atualizado no Banco de Dados." );
+        System.out.println("Schedule da Carga "+load.getEquipamentoId()+" atualizado no Banco de Dados." );
     } 
     
     public void executarAlgoritmo(){

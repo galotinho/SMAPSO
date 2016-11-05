@@ -254,7 +254,7 @@ int rate;
             }
             int status = verificaStatusDaCarga(); // Verifica status da carga no momento atual 1:Ligado 0:Desligado.  
             //Return: 1 para ligar a carga, 2 para desligar a carga, 0 para não fazer nada.
-            System.out.println("Agente Load "+getLocalName()+" Status da carga Proximo Ciclo: "+status+"  Acionamento Proximo Ciclo: "+acionamento);
+            System.out.println("Agente Load "+getLocalName()+" Status da Carga no Próximo Ciclo: "+status+"  Acionamento no Próximo Ciclo: "+acionamento);
         
             if(status == 0 && acionamento == 1){ // Verifica-se se na próximo instante de tempo a carga deverá estar ligada.
                 return 1;

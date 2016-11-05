@@ -40,7 +40,7 @@ public class InserirParticulaBD {
                     if(c.getEquipamentoId() == carga.getEquipamentoId()){
                         Schedule tempo = new Schedule();
                         tempo.setPrioridade(c.getPrioridade());
-                        tempo.setTempo(entry.getKey());
+                        tempo.setTempo(entry.getKey()+1);// Para inserir no Banco de Dados de 1 a 96
                         tempo.setLoad(load);
                         listaTempo.add(tempo);
                     }
@@ -69,7 +69,7 @@ public class InserirParticulaBD {
                  List<Schedule> ls = new ArrayList<>();
                  Schedule s = new Schedule();
                  s.setPrioridade(c.getPrioridade());
-                 s.setTempo(schedule++);
+                 s.setTempo(schedule++); // Para inserir no Banco de Dados de 1 a 96
                  s.setLoad(load);
                  ls.add(s);
                  

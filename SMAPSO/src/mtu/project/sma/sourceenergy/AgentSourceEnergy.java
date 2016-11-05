@@ -126,7 +126,7 @@ public class AgentSourceEnergy extends Agent{
         // Atribui-se o valor lido no dispositivo à variável Resultado.
         resultado = Double.valueOf(tasks.get(0).get());
         
-        System.out.println("Agente SE "+getLocalName()+": "+resultado);
+        System.out.println("Agente SE "+getLocalName()+" gerando: "+resultado+" KW");
         
         //Finaliza a pool de Threads.
         executorService.shutdown();
@@ -164,7 +164,7 @@ public class AgentSourceEnergy extends Agent{
             }
         }
         
-        System.out.println("Agente SE "+getLocalName()+": Prevista - "+geracaoPrevista+" Geracao: "+geracao);
+        System.out.println("Agente SE "+getLocalName()+": Prevista - "+geracaoPrevista+" Geração: "+geracao);
         
         // Se Geração for -1 é porque o dispositivo não está funcionando, então retorna S indicando que o algoritmo de balanceamento precisa saber.
         if(geracao == -1){
