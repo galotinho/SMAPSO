@@ -159,11 +159,11 @@ public class AgentSourceEnergy extends Agent{
             if(s.getDataAtual().toString().equals(currentData)){
                 //É realizada a busca da geração prevista para o instante de tempo atual.
                 if(s.getTempo() == tempo){
+                    System.out.println("Agente SE "+getLocalName()+": Instante de Tempo Atual Previsto: "+s.getTempo()+" Instante de Tempo: "+tempo);
                     geracaoPrevista = s.getPotenciaPrevista();
                 }
             }
         }
-        
         System.out.println("Agente SE "+getLocalName()+": Prevista - "+geracaoPrevista+" Geração: "+geracao);
         
         // Se Geração for -1 é porque o dispositivo não está funcionando, então retorna S indicando que o algoritmo de balanceamento precisa saber.
@@ -246,6 +246,7 @@ public class AgentSourceEnergy extends Agent{
                     if(conteudo.equalsIgnoreCase("1")){ // Caso a mensagem contenha conteúdo = 1 é porque a carga será acionada no próximo ciclo.
                         String alteracao = verificarCapacidadeAtual(Integer.valueOf(myAgent.getLocalName()), geracao);
                         load = LoadDAO.getInstance().findByEquipamentoId(Long.valueOf(msg.getSender().getLocalName()));
+                        System.out.println("Agente SE "+getLocalName()+": Carga - "+msg.getSender().getLocalName()+" Deverá ser acionada no próximo ciclo. Algo de errado ocorrendo? "+alteracao);
                         myAgent.send(gerarMensagem(load,"A",alteracao));
                     }
                 }

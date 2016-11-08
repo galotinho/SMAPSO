@@ -375,7 +375,7 @@ int rate;
                                 if(load.getFonteEnergia()!=0){//Caso sim, envia uma mensagem 1-acionar ou 2-desligar para o Agente SE se estiver ligado a um.
                                     msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
                                     msg.setContent(String.valueOf(acao));
-                                    System.out.println("Agente Load "+getLocalName()+" mensagem de acionamento para Agente SE "+msg.getAllReceiver().next().toString());
+                                    System.out.println("Agente Load "+getLocalName()+" mensagem de acionamento/desligamento para Agente SE "+msg.getAllReceiver().next().toString());
                             
                                     myAgent.send(msg);
                                 }
