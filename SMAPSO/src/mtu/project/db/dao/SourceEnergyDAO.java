@@ -5,9 +5,11 @@
  */
 package mtu.project.db.dao;
 
+import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.Query;
 import mtu.project.db.model.SourceEnergy;
 
 /**
@@ -79,6 +81,11 @@ public class SourceEnergyDAO {
             e.printStackTrace();
             entityManager.getTransaction().rollback();
         }       
+    }
+    public List<SourceEnergy> listAllLoads() {
+        Query query = entityManager.createQuery("SELECT s FROM SourceEnergy s", SourceEnergy.class);
+ 
+        return query.getResultList();
     }
     
     public SourceEnergy findBySourceId(Long sourceId){

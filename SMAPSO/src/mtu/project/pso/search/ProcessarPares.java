@@ -18,10 +18,10 @@ import mtu.project.pso.util.InserirParticulaBD;
  */
 public class ProcessarPares {
     
-    Double demandaMaxima;
+    List<Double> demandaMaxima;
     static Map<Integer,List<Carga>> particulaFinal = new HashMap<>();
     
-    public ProcessarPares(Double demandaMaxima){
+    public ProcessarPares(List<Double> demandaMaxima){
         super();
         
         this.demandaMaxima = demandaMaxima;
@@ -130,8 +130,8 @@ public class ProcessarPares {
         int controle = 0;
         int posicaoA = 0, posicaoB = 0;
         
-        demandaDifAntigo = (Math.abs(demandaMaxima - par.getDiferencaA())) + 
-                           (Math.abs(demandaMaxima - par.getDiferencaB()));
+        demandaDifAntigo = (Math.abs(demandaMaxima.get(par.getPosicaoA()) - par.getDiferencaA())) + 
+                           (Math.abs(demandaMaxima.get(par.getPosicaoB()) - par.getDiferencaB()));
         
         while(controle == 0){
            
@@ -148,7 +148,7 @@ public class ProcessarPares {
                 somaParPosicaoB = (potenciaSimetricaB + somaPotencia(parPosicaoB) + objetoPosicaoA.getPotencia()) 
                         - objetoPosicaoB.getPotencia();
 
-                demandaDifNovo = (Math.abs(demandaMaxima - somaParPosicaoA)) + (Math.abs(demandaMaxima 
+                demandaDifNovo = (Math.abs(demandaMaxima.get(par.getPosicaoA()) - somaParPosicaoA)) + (Math.abs(demandaMaxima.get(par.getPosicaoB())
                         - somaParPosicaoB));
 
                 if(demandaDifNovo < demandaDifAntigo){

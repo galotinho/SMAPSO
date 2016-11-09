@@ -87,7 +87,6 @@ public class SourceScheduleDAO {
             Query query = entityManager.createQuery(
                             "DELETE FROM SourceSchedule s WHERE s.sourceEnergy.sourceId = :p");
             query.setParameter("p", (long)source.getSourceId()).executeUpdate();
-            
             entityManager.getTransaction().commit();
         }catch (Exception e) {
             e.printStackTrace();
@@ -95,7 +94,27 @@ public class SourceScheduleDAO {
         }       
     }
     
-    public SourceSchedule findByEquipamentoId(Long id){
+    public Double sumByTime(int tempo){
+       Query query = null;
+        try{
+            entityManager.getTransaction().begin();
+            query = entityManager.createNativeQuery(
+                            "SELECT SUM(potenciaPrevista) FROM sourceschedule WHERE tempo = :p");
+            query.setParameter("p", tempo);
+            entityManager.getTransaction().commit();
+            
+        }catch (Exception e) {
+            e.printStackTrace();
+            entityManager.getTransaction().rollback();
+        } 
+        
+        if(query != null){
+            return (Double)query.getSingleResult();
+        }
+        return 0.0;
+    }
+    
+    public SourceSchedule findById(Long id){
         SourceSchedule schedule = null;
         try{
             entityManager.getTransaction().begin();

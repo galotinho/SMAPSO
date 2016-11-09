@@ -17,9 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.dao.ScheduleDAO;
-import mtu.project.db.model.Load;
+import mtu.project.db.dao.SourceScheduleDAO;
 import mtu.project.db.model.Schedule;
 import mtu.project.pso.util.InserirParticulaBD;
 
@@ -29,90 +28,108 @@ import mtu.project.pso.util.InserirParticulaBD;
  */
 public class Processamento implements Configuracao{
     
-    Double potenciaMediaUnitaria, potenciaMediaGeral;
-    Double demandaMaxima, demandaMinima;
     Map<Integer,List<Par>> enxame = new HashMap<>();
     List<Par> melhorGlobal = new ArrayList<>();
     int VELOCIDADE;
     List<Carga> loads;
+    Double potenciaMediaUnitaria, potenciaMediaGeral;
+    List<Double> demandaMaxima;
+    List<Double> demandaMinima;
        
     public void execute(){
-        
+               
         List<Schedule> schedules = ScheduleDAO.getInstance().listAllSchedules();
-        Map particulaInicial = null;
-        List<Carga> dados = null;
-        if(schedules.isEmpty()){
+        Map particulaInicial;
+        List<Carga> dados;
+        if(schedules == null || schedules.isEmpty()){
             //new GerarCargas().imprimirListaDeCargas();
             dados = new GerarCargas().gerarListaDeCargas();
             loads = new ArrayList<>(dados);            
             particulaInicial = new GerarParticulaInicial().criarParticulaInicial(dados);
             new InserirParticulaBD().inserirParticula(particulaInicial, loads);
         }else{
-            dados = new GerarCargas().gerarListaDeCargas();
+            dados = new GerarCargas().gerarListaDeCargasExistentes();
             loads = new ArrayList<>(dados);            
-            particulaInicial = new GerarParticulaInicial().criarParticulaInicial(dados);
-        }/*
+            particulaInicial = new GerarParticulaInicial().criarParticulaInicialExistente(dados);
+        }
+        
         potenciaMediaUnitaria = Metricas.potenciaMediaUnitaria(dados);
         potenciaMediaGeral = (potenciaMediaUnitaria*dados.size())/(QTD_MIN_DIA/STEP); 
-
+        demandaMaxima = new ArrayList<>();
+        demandaMinima = new ArrayList<>();
+        
+        gerarDemandaPorTempo();
+             
         //Exibir soma de potência dos grupos da particula inicial.
         int id = 0;
         for(Double grupo : (List<Double>)Metricas.calcularPotenciaTotalPorGrupo(particulaInicial)){
             System.out.println(grupo+" "+id);
             id++;
         }
-        
-        demandaMaxima = potenciaMediaGeral+(potenciaMediaGeral*PORCENTAGEM);
-        demandaMinima = potenciaMediaGeral-(potenciaMediaGeral*PORCENTAGEM);
-        ProcessarPares par = new ProcessarPares(demandaMaxima);    
-        
+                
         BuscaLocal buscaLocal = new BuscaLocal();
         int iteracoes = 0;
+        
+        Double maximo = potenciaMediaGeral+(potenciaMediaGeral*PORCENTAGEM);
+        Double minimo = potenciaMediaGeral-(potenciaMediaGeral*PORCENTAGEM);
         
         while((iteracoes < ITERACOES-1) && 
                 ((Metricas.avaliadorGeral(melhorGlobal, demandaMaxima, demandaMinima) != 0) || 
                                                                     melhorGlobal.isEmpty())){
-           
             List<Par> pares;
             List<Par> parDeBusca;
             
             for(int i = 0; i < ENXAME; i++){
                 
                 VELOCIDADE = probabilidadeCaminho(iteracoes);
-                //System.out.println(VELOCIDADE);
-                pares = new ArrayList<>(buscaLocal.combinarParesAleatorios(particulaInicial, demandaMaxima, demandaMinima));
+                pares = new ArrayList<>(buscaLocal.combinarParesAleatorios(particulaInicial, maximo, minimo));
         
                 if(VELOCIDADE == 0){
-                      processamento(particulaInicial, par, i, pares); 
+                      processamento(particulaInicial, i, pares); 
                 }else{
                     if(enxame.size() == ENXAME && VELOCIDADE == 1){
                         parDeBusca = new ArrayList<>(enxame.get(i));
-                        percorrerCaminho(parDeBusca, pares, particulaInicial, par, i, 999); 
+                        percorrerCaminho(parDeBusca, pares, particulaInicial, i); 
                     }else{
                         if(!melhorGlobal.isEmpty() && VELOCIDADE == 2){
                             parDeBusca = new ArrayList<>(melhorGlobal);
-                            percorrerCaminho(parDeBusca, pares, particulaInicial, par, i, 9999);
+                            percorrerCaminho(parDeBusca, pares, particulaInicial, i);
                             
                         }
                     }
                 }
-               // System.out.println(Metricas.avaliadorGeral(melhorGlobal, demandaMaxima, demandaMinima));
-               }
+            }
             iteracoes++;
         }
         System.out.println("Fim da Busca");
         System.out.println(Metricas.avaliadorGeral(melhorGlobal, demandaMaxima, demandaMinima));
                 
         exibirMelhorGlobal();
-        processarResultado(particulaInicial, par);
-        System.out.println(demandaMaxima+" "+demandaMinima);
-    */
+        processarResultado(particulaInicial);
+                
     }
+    
+    public void gerarDemandaPorTempo(){
+        int intervalos = QTD_MIN_DIA / STEP; 
         
-    public void processarResultado(Map particulaInicial, ProcessarPares par){
+        demandaMaxima.add(0, 0.0);
+        demandaMinima.add(0, 0.0);
+        
+        for(int i = 1; i <= intervalos; i++){
+            Double demanda = SourceScheduleDAO.getInstance().sumByTime(i);
+            demandaMaxima.add(i, potenciaMediaGeral+(potenciaMediaGeral*PORCENTAGEM)+demanda);
+            demandaMinima.add(i, potenciaMediaGeral-(potenciaMediaGeral*PORCENTAGEM)+demanda);
+        }       
+              
+    }
+    
+    public void processarResultado(Map particulaInicial){
         //removo schedules antigos
         new InserirParticulaBD().removeSchedules(loads);
+        ProcessarPares par;
+                
         for(Par p : melhorGlobal){
+            par = new ProcessarPares(demandaMaxima);
             //exibo e insino no BD schedules atualizados
             par.processarPar(particulaInicial, p, 1);
             System.out.println("------------");
@@ -128,7 +145,7 @@ public class Processamento implements Configuracao{
     }
     
     public void percorrerCaminho(List<Par> parML, List<Par> parBL, Map particulaInicial, 
-                                                   ProcessarPares par, int i, int teste){
+                                                   int i){
         
         Par pA = null, pB = null;
         int pa = -1, pb = -1;
@@ -169,8 +186,9 @@ public class Processamento implements Configuracao{
                 parBL.add(pML);
                 parBL.add(p);
                 
-                processamento(particulaInicial, par, i, parBL);
+                processamento(particulaInicial, i, parBL);
             }
+            
             if(pa == -1 || pb == -1){
                 System.out.println("Erro na execução da Busca: Programa Encerrado!");
                 System.exit(1);
@@ -179,30 +197,30 @@ public class Processamento implements Configuracao{
         }
     }
         
-    public void processamento(Map particulaInicial, ProcessarPares par, int i, List<Par> pares){
+    public void processamento(Map particulaInicial, int i, List<Par> pares){
         
         int metrica = 0;
                
         List<Par> paresAtualizados = new ArrayList<>();
              
         for(Par p : pares){
-
+            
+            ProcessarPares par = new ProcessarPares(demandaMaxima); 
+            
             paresAtualizados.add(par.processarPar(particulaInicial, p, 0));
 
-            if((p.getDiferencaA()>demandaMaxima) || (p.getDiferencaA()<demandaMinima) ||
-                    (p.getDiferencaB()>demandaMaxima) || (p.getDiferencaB()<demandaMinima)){
+            if((p.getDiferencaA()>demandaMaxima.get(p.getPosicaoA())) || (p.getDiferencaA()<demandaMinima.get(p.getPosicaoA())) ||
+                    (p.getDiferencaB()>demandaMaxima.get(p.getPosicaoB())) || (p.getDiferencaB()<demandaMinima.get(p.getPosicaoB()))){
                 metrica++;
             }
         }
 
         if(enxame.size() < ENXAME){
             enxame.put(i, pares);
-            //System.out.println(i+" "+metrica);
         }else{
 
             if(Metricas.avaliadorGeral(enxame.get(i), demandaMaxima, demandaMinima) > metrica){
 
-                //System.out.println("TROCA "+Metricas.avaliadorGeral(enxame.get(i), demandaMaxima, demandaMinima)+" "+metrica+" "+i);
                 enxame.replace(i, enxame.get(i), pares);
             }
         }

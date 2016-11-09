@@ -26,7 +26,7 @@ public class BuscaLocal {
     }
         
     public List<Par> combinarParesAleatorios(Map<Integer, List<Carga>> particulaInicial,
-                                    Double demandaMaxima, Double demandaMinima){
+                                    Double maximo, Double minimo){
         
         List<Integer> colunaBinaria = new ArrayList<>();
         List<Integer> posicaoMaior = new ArrayList<>();
@@ -34,23 +34,23 @@ public class BuscaLocal {
         List<Integer> posicaoIntervalo = new ArrayList<>(); 
         
         potenciaPorGrupo = Metricas.calcularPotenciaTotalPorGrupo(particulaInicial);
-        int i = 0;
         
-        for (Double potenciaPorGrupo1 : potenciaPorGrupo) {
-            if(potenciaPorGrupo1 >= demandaMaxima){
-                colunaBinaria.add(i, 1);
-                posicaoMaior.add(i);
+        int j = 0;
+        for (int i = 1; i<potenciaPorGrupo.size();i++) {
+            if(potenciaPorGrupo.get(i) >= maximo){
+                colunaBinaria.add(j, 1);
+                posicaoMaior.add(j);
             }else{
-                if(potenciaPorGrupo1 <= demandaMinima){
-                    colunaBinaria.add(i, -1); 
-                    posicaoMenor.add(i);
+                if(potenciaPorGrupo.get(j) <= minimo){
+                    colunaBinaria.add(j, -1); 
+                    posicaoMenor.add(j);
                 }else{
-                     colunaBinaria.add(i, 0); 
-                     posicaoIntervalo.add(i);
+                     colunaBinaria.add(j, 0); 
+                     posicaoIntervalo.add(j);
                 }       
             }
             //System.out.println(potenciaPorGrupo1+" # "+colunaBinaria.get(i)+ " - "+ i);
-            i++;
+            j++;
         }
         //calcularQuantidadeBinaria(colunaBinaria);
         return combinarPares(posicaoMaior, posicaoMenor, posicaoIntervalo, colunaBinaria);
@@ -83,7 +83,7 @@ public class BuscaLocal {
         Random gerador = new Random();
         Integer posicaoA, posicaoB; 
         int indiceA, indiceB;
-                
+               
         for(int i = 0; i < tamanho/2; i++){
             
             posicaoA = -1; posicaoB = -1;
@@ -141,22 +141,20 @@ public class BuscaLocal {
                 }
             }
             
-            par = new Par(posicaoA, posicaoB, potenciaPorGrupo.get(posicaoA), potenciaPorGrupo.get(posicaoB));
-            parDeTrocas.add(par);
             
             if(posicaoA == -1 || posicaoB == -1){
                 System.out.println("Erro na execução da Troca de Pares: Programa Encerrado!");
                 System.exit(2);
             }
             
+            posicaoA =  posicaoA + 1;
+            posicaoB = posicaoB + 1;
+            
+            par = new Par(posicaoA, posicaoB, potenciaPorGrupo.get(posicaoA), potenciaPorGrupo.get(posicaoB));
+            parDeTrocas.add(par);
+            
         }
-        
-        //System.out.println(parDeTrocas.size());
-        //System.out.println(posicaoMaior.size()+" " + posicaoMenor.size()+" " + posicaoIntervalo.size());
         
         return parDeTrocas;
     }
-    
-    
-    
 }

@@ -22,7 +22,7 @@ public class Metricas {
         
         List<Double> potenciaGrupo = new ArrayList<>();
         Double somaPotencia = 0.0;
-       
+        potenciaGrupo.add(0, somaPotencia);       
         for(Map.Entry<Integer, List<Carga>> entry: particulas.entrySet()) { 
             for(Carga c: entry.getValue()) {
                 somaPotencia = somaPotencia + c.getPotencia();
@@ -31,7 +31,6 @@ public class Metricas {
             potenciaGrupo.add(entry.getKey(), somaPotencia);
             somaPotencia = 0.0;
          }
-        
         return potenciaGrupo; 
     }
     
@@ -45,15 +44,15 @@ public class Metricas {
         return somaPotencia/dados.size();
     }
     
-    public static int avaliadorGeral(List<Par> pares, Double demandaMaxima, Double demandaMinima ){
+    public static int avaliadorGeral(List<Par> pares, List<Double> demandaMaxima, List<Double> demandaMinima ){
         
         int metrica = 0;
         
         if(!pares.isEmpty()){
             for(Par p : pares){
 
-            if((p.getDiferencaA()>demandaMaxima) || (p.getDiferencaA()<demandaMinima) ||
-                    (p.getDiferencaB()>demandaMaxima) || (p.getDiferencaB()<demandaMinima)){
+            if((p.getDiferencaA()>demandaMaxima.get(p.getPosicaoA())) || (p.getDiferencaA()<demandaMinima.get(p.getPosicaoA())) ||
+                    (p.getDiferencaB()>demandaMaxima.get(p.getPosicaoB())) || (p.getDiferencaB()<demandaMinima.get(p.getPosicaoB()))){
                 metrica++;
             }
             }

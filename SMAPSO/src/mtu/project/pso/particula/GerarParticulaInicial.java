@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Random;
 
 /**
+ /**
  *
  * @author Rafael
  */
@@ -55,7 +56,7 @@ public class GerarParticulaInicial implements Configuracao{
         *  vai depender da quantidade tempo que ela demandará.
         */
         
-        for(int i = 0; i<INTERVALOS_TEMPO_DIA; i++){
+        for(int i = 1; i<=INTERVALOS_TEMPO_DIA; i++){
             
             List<Carga> dadosLocal = new ArrayList<>();
             tentativa = 0;
@@ -145,11 +146,25 @@ public class GerarParticulaInicial implements Configuracao{
         }
     }
     
+    public Map criarParticulaInicialExistente(List<Carga> dados){
+        
+        for(int i = 1; i<=INTERVALOS_TEMPO_DIA; i++){
+            List<Carga> dadosLocal = new ArrayList<>();
+            for (Carga dado : dados) {
+                if (i == dado.getTempoId()) {
+                    dadosLocal.add(dado);
+                }
+            }
+            particulaInicial.put(i, dadosLocal);
+        }
+        return particulaInicial;
+    }
+          
     public void imprimirParticulaInicial(){
         
         int soma = 0;
         
-        for(int i = 0; i<INTERVALOS_TEMPO_DIA;i++){
+        for(int i = 1; i<=INTERVALOS_TEMPO_DIA;i++){
             
             System.out.println(i + " ----");
             soma = soma + particulaInicial.get(i).size(); // Verificar se a quantidade de cargas está correta.
@@ -157,11 +172,7 @@ public class GerarParticulaInicial implements Configuracao{
             for(int j = 0; j < particulaInicial.get(i).size(); j++){
 
                     Carga c = (Carga)particulaInicial.get(i).get(j);
-                    System.out.println(c.getEquipamentoId());
                     System.out.println(c.getPotencia());
-                    System.out.println(c.getPrioridade());
-                    System.out.println(c.getTempoId());
-                    System.out.println(c.getTempo());
             }
         }
         System.out.println(soma);
