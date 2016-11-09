@@ -57,7 +57,7 @@ public class SourceScheduleDAO {
         try{
            entityManager.getTransaction().begin();
            if(!entityManager.contains(schedule)){
-                if(entityManager.find(SourceEnergy.class, schedule.getId()) == null){
+                if(entityManager.find(SourceSchedule.class, schedule.getId()) == null){
                     throw new Exception("Erro ao atualizar dados do schedule;");
                 }
            }
@@ -136,10 +136,11 @@ public class SourceScheduleDAO {
                             "SELECT id FROM sourceschedule WHERE tempo = :p AND dataAtual = :c");
             query.setParameter("p", tempo);
             query.setParameter("c", data);
-            
             BigInteger result = (BigInteger)query.getSingleResult();
-            schedule = entityManager.find(SourceSchedule.class, result.longValue());
+            entityManager.getTransaction().commit();
             
+            entityManager.getTransaction().begin();            
+            schedule = entityManager.find(SourceSchedule.class, result.longValue());            
             entityManager.getTransaction().commit();
             
         }catch (Exception e) {
