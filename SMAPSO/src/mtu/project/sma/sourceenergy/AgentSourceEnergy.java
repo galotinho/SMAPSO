@@ -29,6 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.dao.SourceEnergyDAO;
+import mtu.project.db.dao.SourceScheduleDAO;
 import mtu.project.db.model.Load;
 import mtu.project.db.model.SourceEnergy;
 import mtu.project.db.model.SourceSchedule;
@@ -76,7 +77,7 @@ public class AgentSourceEnergy extends Agent{
         // Comportamento que recebe requisições dos Agentes Load.    
         addBehaviour(new RecebeRequestLoad ());
         //Adiciona o comportamento responsável por realizar a inserção da leitura de geração de energia no Banco de Dados a cada 15 minutos.
-        addBehaviour(new ScheduleAgentSE (this, 150000));
+        addBehaviour(new ScheduleAgentSE (this, 5000));
     }
     
     // Método que gera mensagem para o Agente Central.
@@ -204,6 +205,33 @@ public class AgentSourceEnergy extends Agent{
         return h+m;
     }
     
+    public void inserirDadosColetadosBD(){
+        Date dataAtual = new Date();
+        Locale locale = new Locale("pt","BR");
+        Double geracao = 0.0;
+        
+        try {
+            geracao = verificaGeracaoEnergia();
+        } catch (InterruptedException | ExecutionException ex) {
+            Logger.getLogger(AgentSourceEnergy.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+        String currentTime = sdf.format(dataAtual);
+        java.text.SimpleDateFormat data = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        String currentData = data.format(dataAtual);
+        
+        StringTokenizer st = new StringTokenizer(currentTime);
+        String hora = st.nextToken();
+        String minuto = st.nextToken();
+        int tempo = conversorTempo(hora, minuto);
+        
+        SourceSchedule schedule = SourceScheduleDAO.getInstance().findByDateTime(tempo, currentData);
+        schedule.setPotenciaReal(geracao);
+        SourceScheduleDAO.getInstance().update(schedule);
+        
+    }
+    
     public class ScheduleAgentSE extends TickerBehaviour{
         
         public ScheduleAgentSE(Agent a, long period) {
@@ -213,7 +241,7 @@ public class AgentSourceEnergy extends Agent{
 
         @Override
         protected void onTick() {
-            
+            inserirDadosColetadosBD();
         }
     }
     

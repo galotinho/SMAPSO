@@ -125,4 +125,23 @@ public class SourceScheduleDAO {
         }      
         return schedule;
     }
+    
+    public SourceSchedule findByDateTime(int tempo, String data){
+        Query query = null;
+        try{
+            entityManager.getTransaction().begin();
+            query = entityManager.createNativeQuery(
+                            "SELECT * FROM sourceschedule WHERE tempo = :p AND dataAtual = :c");
+            query.setParameter("p", tempo);
+            query.setParameter("c", data);
+            entityManager.getTransaction().commit();
+            
+        }catch (Exception e) {
+            e.printStackTrace();
+            entityManager.getTransaction().rollback();
+        } 
+        
+        return (SourceSchedule)query.getSingleResult();
+       
+    }
 }
