@@ -5,6 +5,7 @@
  */
 package mtu.project.db.dao;
 
+import java.math.BigInteger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -128,20 +129,25 @@ public class SourceScheduleDAO {
     
     public SourceSchedule findByDateTime(int tempo, String data){
         Query query = null;
+        SourceSchedule schedule = null;
         try{
             entityManager.getTransaction().begin();
             query = entityManager.createNativeQuery(
-                            "SELECT * FROM sourceschedule WHERE tempo = :p AND dataAtual = :c");
+                            "SELECT id FROM sourceschedule WHERE tempo = :p AND dataAtual = :c");
             query.setParameter("p", tempo);
             query.setParameter("c", data);
+            
+            BigInteger result = (BigInteger)query.getSingleResult();
+            schedule = entityManager.find(SourceSchedule.class, result.longValue());
+            
             entityManager.getTransaction().commit();
             
         }catch (Exception e) {
             e.printStackTrace();
             entityManager.getTransaction().rollback();
         } 
-        
-        return (SourceSchedule)query.getSingleResult();
+                
+        return schedule;
        
     }
 }
