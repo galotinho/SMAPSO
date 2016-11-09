@@ -7,6 +7,7 @@ package mtu.project.sma.sourceenergy;
 
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -74,6 +75,8 @@ public class AgentSourceEnergy extends Agent{
         }
         // Comportamento que recebe requisições dos Agentes Load.    
         addBehaviour(new RecebeRequestLoad ());
+        //Adiciona o comportamento responsável por realizar a inserção da leitura de geração de energia no Banco de Dados a cada 15 minutos.
+        addBehaviour(new ScheduleAgentSE (this, 150000));
     }
     
     // Método que gera mensagem para o Agente Central.
@@ -199,6 +202,19 @@ public class AgentSourceEnergy extends Agent{
             }
         }
         return h+m;
+    }
+    
+    public class ScheduleAgentSE extends TickerBehaviour{
+        
+        public ScheduleAgentSE(Agent a, long period) {
+            super(a, period);
+            setFixedPeriod(true);
+        }
+
+        @Override
+        protected void onTick() {
+            
+        }
     }
     
     public class RecebeRequestLoad extends CyclicBehaviour {//este é um comportamento ciclico

@@ -18,10 +18,10 @@ import jade.lang.acl.ACLMessage;
 import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 import mtu.project.db.dao.LoadDAO;
-import mtu.project.db.dao.ScheduleDAO;
 import mtu.project.db.model.Load;
 import mtu.project.pso.Configuracao;
 import mtu.project.pso.Processamento;
@@ -30,6 +30,7 @@ public class AgentCentral extends Agent implements Configuracao{
 
     private int CONTADOR;
     private int SCHEDULES = 0;
+    private List<Long> FALHA = new ArrayList<>();
     
     @Override
     protected void setup( ){
@@ -108,14 +109,7 @@ public class AgentCentral extends Agent implements Configuracao{
             executarAlgoritmo();
         }        
     }
-    
-    //Método responsável por remover o Schedule da carga devido a corrência de Falha.
-    public void zerarSchedule(Load load){
-        Integer id = Integer.valueOf(load.getEquipamentoId().toString());
-        ScheduleDAO.getInstance().removeAll(id);
-        System.out.println("Schedule da Carga "+load.getEquipamentoId()+" atualizado no Banco de Dados." );
-    } 
-    
+      
     public void executarAlgoritmo(){
         new Processamento().execute();
     }
@@ -234,10 +228,12 @@ public class AgentCentral extends Agent implements Configuracao{
                         inserirBancoDados(carga);
                     }else{
                         if(situacao.equals("F")){ // Carga com falha
-                            zerarSchedule(carga);
+                            System.out.println("Carga "+equipamentoId+" apresentou falha na comunicação ou no acionamento/desligamento! Por favor verifique!");
                             CONTADOR++; //Incrementa contador informando que carga não está funcionando bem e que o algoritmo de balanceamento precisa ser executado.
+                            FALHA.add(Long.valueOf(equipamentoId));
+                            
                             if(CONTADOR < 3){
-                                System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Mas ainda não será processada!");
+                                System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" devido à falha registrados! Mas ainda não será processada!");
                             }else{
                                 CONTADOR = 0;
                                 System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" registrados! Será processada agora!");

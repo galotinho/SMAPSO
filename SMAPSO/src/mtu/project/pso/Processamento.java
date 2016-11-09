@@ -70,9 +70,7 @@ public class Processamento implements Configuracao{
         BuscaLocal buscaLocal = new BuscaLocal();
         int iteracoes = 0;
         
-        Double maximo = potenciaMediaGeral+(potenciaMediaGeral*PORCENTAGEM);
-        Double minimo = potenciaMediaGeral-(potenciaMediaGeral*PORCENTAGEM);
-        
+                
         while((iteracoes < ITERACOES-1) && 
                 ((Metricas.avaliadorGeral(melhorGlobal, demandaMaxima, demandaMinima) != 0) || 
                                                                     melhorGlobal.isEmpty())){
@@ -82,7 +80,7 @@ public class Processamento implements Configuracao{
             for(int i = 0; i < ENXAME; i++){
                 
                 VELOCIDADE = probabilidadeCaminho(iteracoes);
-                pares = new ArrayList<>(buscaLocal.combinarParesAleatorios(particulaInicial, maximo, minimo));
+                pares = new ArrayList<>(buscaLocal.combinarParesAleatorios(particulaInicial, demandaMaxima, demandaMinima));
         
                 if(VELOCIDADE == 0){
                       processamento(particulaInicial, i, pares); 

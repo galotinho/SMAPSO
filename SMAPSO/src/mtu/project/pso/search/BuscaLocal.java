@@ -26,7 +26,7 @@ public class BuscaLocal {
     }
         
     public List<Par> combinarParesAleatorios(Map<Integer, List<Carga>> particulaInicial,
-                                    Double maximo, Double minimo){
+                                    List<Double> demandaMaxima, List<Double> demandaMinima){
         
         List<Integer> colunaBinaria = new ArrayList<>();
         List<Integer> posicaoMaior = new ArrayList<>();
@@ -36,12 +36,12 @@ public class BuscaLocal {
         potenciaPorGrupo = Metricas.calcularPotenciaTotalPorGrupo(particulaInicial);
         
         int j = 0;
-        for (int i = 1; i<potenciaPorGrupo.size();i++) {
-            if(potenciaPorGrupo.get(i) >= maximo){
+        for (int i = 1; i < potenciaPorGrupo.size();i++) {
+            if(potenciaPorGrupo.get(i) >= demandaMaxima.get(i)){
                 colunaBinaria.add(j, 1);
                 posicaoMaior.add(j);
             }else{
-                if(potenciaPorGrupo.get(j) <= minimo){
+                if(potenciaPorGrupo.get(j) <= demandaMinima.get(i)){
                     colunaBinaria.add(j, -1); 
                     posicaoMenor.add(j);
                 }else{
@@ -49,10 +49,9 @@ public class BuscaLocal {
                      posicaoIntervalo.add(j);
                 }       
             }
-            //System.out.println(potenciaPorGrupo1+" # "+colunaBinaria.get(i)+ " - "+ i);
             j++;
         }
-        //calcularQuantidadeBinaria(colunaBinaria);
+        
         return combinarPares(posicaoMaior, posicaoMenor, posicaoIntervalo, colunaBinaria);
     }
     
@@ -157,4 +156,5 @@ public class BuscaLocal {
         
         return parDeTrocas;
     }
+    
 }

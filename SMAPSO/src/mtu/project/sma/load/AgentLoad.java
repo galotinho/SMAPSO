@@ -89,7 +89,7 @@ int rate;
         //Comportamento para receber a mensagem inicial do Agente Central.
         addBehaviour(new CapturaRequestCentral (this, padrao, load));
         
-        //Adiciona o comportamento responsável por realizar todo o ciclo de ações do Agente a cada 10 minutos.
+        //Adiciona o comportamento responsável por realizar todo o ciclo de ações do Agente a cada 15 minutos.
         addBehaviour(new ScheduleAgentLoad (this, 100000, load, sleep));
     }
     
