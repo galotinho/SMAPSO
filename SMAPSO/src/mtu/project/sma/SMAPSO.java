@@ -42,7 +42,7 @@ public class SMAPSO {
         */
        
         
-        String[] parametros = { "-host", "141.219.123.44", "-container",
+        String[] parametros = { "-host", "141.219.121.124", "-container",
                                 "-container-name","Router1", 
                                 "1:mtu.project.sma.sourceenergy.AgentSourceEnergy(Fotovoltaica1, 1, END_DEVICE1, "+porta+", 9600);"
                               + "5:mtu.project.sma.load.AgentLoad(256.36, 80, 1, 36000, END_DEVICE5, "+porta+", 9600);"
@@ -51,8 +51,8 @@ public class SMAPSO {
         Boot.main(parametros);	
         
         
-        /* 
-        String[] parametros = { "-gui", "-host", "141.219.123.44", "-container",
+       /*  
+        String[] parametros = { "-gui", "-host", "141.219.125.248", "-container",
                                 "-container-name","Coordinator", 
                                 "Central:mtu.project.sma.central.AgentCentral(iniciar);"
                               + "2:mtu.project.sma.load.AgentLoad(47.18, 78, 0, 48000, END_DEVICE2, "+porta+", 9600);"

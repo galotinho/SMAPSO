@@ -93,7 +93,7 @@ public class SourceEnergyDAO {
         try{
             entityManager.getTransaction().begin();
             carga = entityManager.find(SourceEnergy.class, sourceId);
-            entityManager.getTransaction().begin();
+            entityManager.getTransaction().commit();
         }catch (Exception e) {
             e.printStackTrace();
         }       
