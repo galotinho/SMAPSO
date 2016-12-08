@@ -77,7 +77,7 @@ public class AgentSourceEnergy extends Agent{
         // Comportamento que recebe requisições dos Agentes Load.    
         addBehaviour(new RecebeRequestLoad ());
         //Adiciona o comportamento responsável por realizar a inserção da leitura de geração de energia no Banco de Dados a cada 15 minutos.
-        addBehaviour(new ScheduleAgentSE (this, 150000));
+        addBehaviour(new ScheduleAgentSE (this, 900000));
     }
     
     // Método que gera mensagem para o Agente Central.

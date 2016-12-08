@@ -93,7 +93,7 @@ public class AgentCentral extends Agent implements Configuracao{
             comportamento.addSubBehaviour(new RecebeRequest());
             addBehaviour(comportamento);
             
-            addBehaviour(new ScheduleVerificaFalha(this, 100000));
+            addBehaviour(new ScheduleVerificaFalha(this, 900000));
             
         }else{
             System.out.println("Especifique o procedimento inicial a ser realizado." ) ;
