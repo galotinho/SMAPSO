@@ -167,7 +167,6 @@ int rate;
                         acionarDesligarCarga();
                         acionarDispositivo = 0;
                     }
-                    
                 }
                 return verificaEstado(load);
             }
@@ -291,7 +290,10 @@ int rate;
 
             @Override
             protected ACLMessage prepareResponse (ACLMessage request) throws NotUnderstoodException, RefuseException {
-
+                
+                ACLMessage agree = request.createReply();
+                agree.setPerformative(ACLMessage.AGREE);
+                
                 /*A classe StringTokemizer permite que você separe ou encontre palavras (tokens) em qualquer formato. */
                 StringTokenizer st = new StringTokenizer(request.getContent());
                 String requisicao = st.nextToken(); //pego primeiro token.
@@ -299,9 +301,6 @@ int rate;
                 if(requisicao.equalsIgnoreCase("iniciar")){ // se for para registrar no banco de dados
 
                     if(load.getTempo() > 0 && load.getPotencia() > 0){
-                        ACLMessage agree = request.createReply();
-                        agree.setPerformative(ACLMessage.AGREE);
-
                         return agree; //envia mensagem AGREE.
                     }else{
                         //Envia Mensagem Refuse.
@@ -309,7 +308,11 @@ int rate;
                     }
                     // envia mensagem NOT UNDERSTOOD
                 }else{
-                    throw new NotUnderstoodException ("O Agente Load não entendeu sua solicitação." );
+                    if(requisicao.equalsIgnoreCase("falha")){
+                        return agree; //envia mensagem AGREE.
+                    }else{
+                        throw new NotUnderstoodException ("O Agente Load não entendeu sua solicitação." );
+                    }
                 }
             }
 
@@ -320,7 +323,12 @@ int rate;
                 ACLMessage inform = request.createReply();
                 inform.setPerformative(ACLMessage.INFORM);
                 //Autoriza a execução do Ticker Behaviour.
-                ativarComportamento = 1;
+                if(ativarComportamento == 0){
+                    ativarComportamento = 1;
+                }else{
+                    ativarComportamento = 0;
+                }
+                
                 return inform; // envia mensagem INFORM.
 
             }

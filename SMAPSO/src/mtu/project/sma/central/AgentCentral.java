@@ -8,6 +8,7 @@ package mtu.project.sma.central;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.SequentialBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -91,8 +92,37 @@ public class AgentCentral extends Agent implements Configuracao{
             comportamento.addSubBehaviour(new IniciarAgentsLoad(this, msg));
             comportamento.addSubBehaviour(new RecebeRequest());
             addBehaviour(comportamento);
+            
+            addBehaviour(new ScheduleVerificaFalha(this, 100000));
+            
         }else{
             System.out.println("Especifique o procedimento inicial a ser realizado." ) ;
+        }
+    }
+    
+    public boolean verificaFalha(Long id){
+        return true;
+    }
+    
+    public class ScheduleVerificaFalha extends TickerBehaviour{
+        
+        public ScheduleVerificaFalha(Agent a, long period) {
+            super(a, period);
+            setFixedPeriod(true); // método que faz com que o Ticker Behavior execute o mesmo tempo em todos os Agentes.
+        }
+
+        @Override
+        protected void onTick() {
+            ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            msg.setContent("falha");
+            if(FALHA.size() > 0){
+                for(Long id : FALHA){
+                    msg.addReceiver(super.myAgent.getAID(Long.toString(id)));
+                    FALHA.remove(id);
+                }
+                myAgent.send(msg);
+            }
         }
     }
     
@@ -230,7 +260,10 @@ public class AgentCentral extends Agent implements Configuracao{
                         if(situacao.equals("F")){ // Carga com falha
                             System.out.println("Carga "+equipamentoId+" apresentou falha na comunicação ou no acionamento/desligamento! Por favor verifique!");
                             CONTADOR++; //Incrementa contador informando que carga não está funcionando bem e que o algoritmo de balanceamento precisa ser executado.
-                            FALHA.add(Long.valueOf(equipamentoId));
+                            //Insere em uma lista as cargas com falha.
+                            if(!FALHA.contains(Long.valueOf(equipamentoId))){
+                                FALHA.add(Long.valueOf(equipamentoId));
+                            }
                             
                             if(CONTADOR < 3){
                                 System.out.println("Dados para alteração de alocação da Carga "+equipamentoId+" devido à falha registrados! Mas ainda não será processada!");
