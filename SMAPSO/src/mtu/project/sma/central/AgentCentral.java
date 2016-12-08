@@ -20,7 +20,9 @@ import jade.domain.FIPANames;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.StringTokenizer;
 import mtu.project.db.dao.LoadDAO;
 import mtu.project.db.model.Load;
@@ -240,6 +242,10 @@ public class AgentCentral extends Agent implements Configuracao{
                     e.printStackTrace();
                 }
                 
+                Date horaAtual = new Date();
+                Locale locale = new Locale("pt","BR");
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+                                
                 if(tipo == 1){//Agente Load
                     StringTokenizer st = new StringTokenizer(msg.getContent());
                     String situacao = st.nextToken();
@@ -259,6 +265,7 @@ public class AgentCentral extends Agent implements Configuracao{
                         inserirBancoDados(carga);
                     }else{
                         if(situacao.equals("F")){ // Carga com falha
+                            System.out.println(sdf.format(horaAtual));
                             System.out.println("Carga "+equipamentoId+" apresentou falha na comunicação ou no acionamento/desligamento! Por favor verifique!");
                             CONTADOR++; //Incrementa contador informando que carga não está funcionando bem e que o algoritmo de balanceamento precisa ser executado.
                             //Insere em uma lista as cargas com falha.
@@ -295,6 +302,7 @@ public class AgentCentral extends Agent implements Configuracao{
                         if(!operacao.equals("R") && !operacao.equals("A")){ 
                             System.out.println("Agente Central não entendeu solicitação do Agente SE "+msg.getSender().getName());
                         }else{   
+                            System.out.println(sdf.format(horaAtual));
                             System.out.println("Agente Central concorda em realizar a solicitação do Agente SE "+msg.getSender().getName());
                             if(operacao.equals("R")){ // Realizar cadastro de carga
                                 try{

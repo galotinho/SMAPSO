@@ -111,6 +111,10 @@ int rate;
         }else{
             resultado = 0;
         }
+        Date horaAtual = new Date();
+        Locale locale = new Locale("pt","BR");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+        System.out.println(sdf.format(horaAtual));
         System.out.println("Agente Load "+getLocalName()+" Status: "+tasks.get(0).get());
         //Finaliza a pool de Threads.
         executorService.shutdown();
@@ -132,6 +136,10 @@ int rate;
         lst.add(new ConexaoXBee(dispositivo, comando, porta, rate));
         //Executa a Thread e espera o resultado de retorno.
         List<Future<String>> tasks = executorService.invokeAll(lst);
+        Date horaAtual = new Date();
+        Locale locale = new Locale("pt","BR");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+        System.out.println(sdf.format(horaAtual));
         System.out.println("Agente Load "+getLocalName()+" Comando: "+tasks.get(0).get());
         
         //Finaliza a pool de Threads.
@@ -145,6 +153,10 @@ int rate;
         
         //Verifica se a carga já existe no Banco de Dados.
         if(carga != null){
+            Date horaAtual = new Date();
+            Locale locale = new Locale("pt","BR");
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+            System.out.println(sdf.format(horaAtual));
             System.out.println("Agente Load "+getLocalName()+" Schedule vazio? "+carga.getSchedule().isEmpty());
             return !carga.getSchedule().isEmpty(); //Verifica se já existe Schedule associado à carga.
         }else{
@@ -194,6 +206,7 @@ int rate;
             }
         }
         int status = verificaStatusDaCarga(); // Verifica status da carga no momento atual 1:Ligado 0:Desligado.      
+        System.out.println(sdf.format(horaAtual));
         System.out.println("Agente Load "+getLocalName()+" Status da carga: "+status+"  Acionamento: "+acionamento);
         
                 
@@ -253,6 +266,7 @@ int rate;
             }
             int status = verificaStatusDaCarga(); // Verifica status da carga no momento atual 1:Ligado 0:Desligado.  
             //Return: 1 para ligar a carga, 2 para desligar a carga, 0 para não fazer nada.
+            System.out.println(sdf.format(horaAtual));
             System.out.println("Agente Load "+getLocalName()+" Status da Carga no Próximo Ciclo: "+status+"  Acionamento no Próximo Ciclo: "+acionamento);
         
             if(status == 0 && acionamento == 1){ // Verifica-se se na próximo instante de tempo a carga deverá estar ligada.
@@ -373,16 +387,21 @@ int rate;
                 //Variável que determina o tipo de mensagem a ser enviada. R caso seja para cadastrar a Carga ou F caso ocorra alguma falha.
                 //Essa situação só é enviada para Agente Central caso o cadastro seja realizado via Agente SE essa variável não é usada.
                 String situacao; 
-
+                Date horaAtual = new Date();
+                Locale locale = new Locale("pt","BR");
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+                
                 if(verificaTemposAlocados(load)){ //Verifica se a carga já está cadastrada e se possui schedule registrado. Caso não, o cadastro da carga é acionado.
                     try {
                         if(verificaEstadoAtual(load)){ //Verifica se o status da carga é a mesma que está cadastrada no schedule da carga. Caso não, uma mensagem de falha é enviada para o Agente Central.
                             int acao = verificaMudancaProxCiclo(load);
+                            System.out.println(sdf.format(horaAtual));
                             System.out.println("Agente Load "+getLocalName()+" Mudanca proximo Ciclo?: "+acao);
                             if(acao != 0){ //Verifica se a carga será acionada/desligada no próximo ciclo. 
                                 if(load.getFonteEnergia()!=0){//Caso sim, envia uma mensagem 1-acionar ou 2-desligar para o Agente SE se estiver ligado a um.
                                     msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
                                     msg.setContent(String.valueOf(acao));
+                                    System.out.println(sdf.format(horaAtual));
                                     System.out.println("Agente Load "+getLocalName()+" mensagem de acionamento/desligamento para Agente SE "+msg.getAllReceiver().next().toString());
                             
                                     myAgent.send(msg);
@@ -408,6 +427,7 @@ int rate;
                             //Carga com Falha, envia mensagem de falha para o Agente Central.
                             situacao = "F";
                             msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia());
+                            System.out.println(sdf.format(horaAtual));
                             System.out.println("Agente Load "+getLocalName()+" mensagem de falha para Agente Central "+msg.getAllReceiver().next().toString()+" "+msg.getContent());
                             
                             myAgent.send(msg);
@@ -419,6 +439,7 @@ int rate;
                     if(load.getFonteEnergia() != 0){ //Envia uma mensagem solicitando registro/atualização no banco de dados ao Agente SE.
                         msg.addReceiver(super.myAgent.getAID(Integer.toString(load.getFonteEnergia())));
                         msg.setContent("R "+load.getPotencia()+" "+load.getTempo());
+                        System.out.println(sdf.format(horaAtual));
                         System.out.println("Agente Load "+getLocalName()+" mensagem de registro para Agente SE "+msg.getAllReceiver().next().toString()+" "+msg.getContent());
                             
                         myAgent.send(msg);
@@ -440,6 +461,7 @@ int rate;
                         //Registrar Carga, envia mensagem de registro para o Agente Central.
                         situacao = "R";
                         msg.setContent(situacao+" "+load.getEquipamentoId()+" "+load.getPotencia()+" "+load.getTempo()+" 0");
+                        System.out.println(sdf.format(horaAtual));
                         System.out.println("Agente Load "+getLocalName()+" mensagem de registro para Agente Central "+msg.getAllReceiver().next().toString()+" "+msg.getContent());
                                                
                         myAgent.send(msg);

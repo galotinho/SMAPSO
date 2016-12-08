@@ -110,7 +110,10 @@ public class AgentSourceEnergy extends Agent{
         String operacao = op; //R = Registro e A = Alteração
         String alteracao = alt; //S = Sim e N = Não
         String dados = operacao+" "+load.getEquipamentoId().toString()+" "+load.getPotencia()+" "+load.getTempo()+" "+load.getFonteEnergia()+" "+alteracao;
-        
+        Date horaAtual = new Date();
+        Locale locale = new Locale("pt","BR");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+        System.out.println(sdf.format(horaAtual));
         System.out.println("Agente SE "+getLocalName()+": "+dados);
         
         return dados;
@@ -129,7 +132,10 @@ public class AgentSourceEnergy extends Agent{
         List<Future<String>> tasks = executorService.invokeAll(lst);
         // Atribui-se o valor lido no dispositivo à variável Resultado.
         resultado = Double.valueOf(tasks.get(0).get());
-        
+        Date horaAtual = new Date();
+        Locale locale = new Locale("pt","BR");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+        System.out.println(sdf.format(horaAtual));
         System.out.println("Agente SE "+getLocalName()+" gerando: "+resultado+" KW");
         
         //Finaliza a pool de Threads.
@@ -163,11 +169,13 @@ public class AgentSourceEnergy extends Agent{
             if(s.getDataAtual().toString().equals(currentData)){
                 //É realizada a busca da geração prevista para o instante de tempo atual.
                 if(s.getTempo() == tempo){
+                    System.out.println(sdf.format(dataAtual));
                     System.out.println("Agente SE "+getLocalName()+": Instante de Tempo Atual Previsto: "+s.getTempo()+" Instante de Tempo: "+tempo);
                     geracaoPrevista = s.getPotenciaPrevista();
                 }
             }
         }
+        System.out.println(sdf.format(dataAtual));
         System.out.println("Agente SE "+getLocalName()+": Prevista - "+geracaoPrevista+" Geração: "+geracao);
         
         // Se Geração for -1 é porque o dispositivo não está funcionando, então retorna S indicando que o algoritmo de balanceamento precisa saber.
@@ -257,6 +265,10 @@ public class AgentSourceEnergy extends Agent{
             Load load = new Load();
             ACLMessage msg = myAgent.receive(mt);
             
+            Date horaAtual = new Date();
+            Locale locale = new Locale("pt","BR");
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH mm", locale);
+                        
             Double geracao = 0.0;
             try {
                 geracao = verificaGeracaoEnergia();
@@ -292,6 +304,7 @@ public class AgentSourceEnergy extends Agent{
                     if(conteudo.equalsIgnoreCase("1")){ // Caso a mensagem contenha conteúdo = 1 é porque a carga será acionada no próximo ciclo.
                         String alteracao = verificarCapacidadeAtual(Integer.valueOf(myAgent.getLocalName()), geracao);
                         load = LoadDAO.getInstance().findByEquipamentoId(Long.valueOf(msg.getSender().getLocalName()));
+                        System.out.println(sdf.format(horaAtual));
                         System.out.println("Agente SE "+getLocalName()+": Carga - "+msg.getSender().getLocalName()+" Deverá ser acionada no próximo ciclo. Algo de errado ocorrendo? "+alteracao);
                         myAgent.send(gerarMensagem(load,"A",alteracao));
                     }
