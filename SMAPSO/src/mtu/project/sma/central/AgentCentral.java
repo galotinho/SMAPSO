@@ -117,7 +117,8 @@ public class AgentCentral extends Agent implements Configuracao{
             msg.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             msg.setContent("falha");
             if(FALHA.size() > 0){
-                for(Long id : FALHA){
+                List<Long> falha = new ArrayList<>(FALHA);
+                for(Long id : falha){
                     msg.addReceiver(super.myAgent.getAID(Long.toString(id)));
                     FALHA.remove(id);
                 }
