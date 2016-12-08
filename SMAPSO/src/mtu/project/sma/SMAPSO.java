@@ -22,8 +22,8 @@ public class SMAPSO {
            Agente Load: Potência, Instantes de Tempo, ID da Fonte de Energia (0 Se não tiver), Tempo de Sleep(Sincronização), Dispositivo, Porta, Rate
            Agente SE: Nome da Fonte, Tipo da Fonte (1-Fotovoltaica, 2- Wind Power), Dispositivo, Porta, Rate
         */
-        String porta = "/dev/ttyUSB0";
-        //String porta = "COM12";
+        //String porta = "/dev/ttyUSB0";
+        String porta = "COM12";
         /*
         String[] parametros = { "-name", "Factory",
                                 "-container-name","Router2", 
@@ -31,7 +31,7 @@ public class SMAPSO {
                              };		
         Boot.main(parametros);	
         */
-        
+        /*
         String[] parametros = { "-name", "Factory",
                                 "-container-name","Router2", 
                                 "3:mtu.project.sma.load.AgentLoad(178.18, 45, 0, 120000, END_DEVICE3, "+porta+", 9600);"
@@ -39,7 +39,7 @@ public class SMAPSO {
                               
                               };		
         Boot.main(parametros);	
-        
+        */
        
         /*
         String[] parametros = { "-host", "141.219.121.124", "-container",
@@ -51,7 +51,7 @@ public class SMAPSO {
         Boot.main(parametros);	
         */
         
-        /* 
+         
         String[] parametros = { "-gui", "-host", "141.219.121.124", "-container",
                                 "-container-name","Coordinator", 
                                 "Central:mtu.project.sma.central.AgentCentral(iniciar);"
@@ -59,7 +59,7 @@ public class SMAPSO {
                               
                               };    
         Boot.main(parametros);	
-        */
+        
 	 
     }
     
