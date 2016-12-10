@@ -6,6 +6,7 @@
 package mtu.project.sma;
 
 import jade.Boot;
+import mtu.project.pso.Processamento;
 
 /**
  *
@@ -24,6 +25,7 @@ public class SMAPSO {
         */
         //String porta = "/dev/ttyUSB0";
         String porta = "COM12";
+        
         /*
         String[] parametros = { "-name", "Factory",
                                 "-container-name","Router2", 

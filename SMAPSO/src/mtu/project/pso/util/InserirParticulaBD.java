@@ -69,7 +69,7 @@ public class InserirParticulaBD {
                  List<Schedule> ls = new ArrayList<>();
                  Schedule s = new Schedule();
                  s.setPrioridade(c.getPrioridade());
-                 s.setTempo(schedule++); // Para inserir no Banco de Dados de 1 a 96
+                 s.setTempo(schedule); // Para inserir no Banco de Dados de 1 a 96
                  s.setLoad(load);
                  ls.add(s);
                  
