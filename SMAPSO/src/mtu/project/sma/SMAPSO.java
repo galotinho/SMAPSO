@@ -6,7 +6,6 @@
 package mtu.project.sma;
 
 import jade.Boot;
-import mtu.project.pso.Processamento;
 
 /**
  *
@@ -23,8 +22,8 @@ public class SMAPSO {
            Agente Load: Potência, Instantes de Tempo, ID da Fonte de Energia (0 Se não tiver), Tempo de Sleep(Sincronização), Dispositivo, Porta, Rate
            Agente SE: Nome da Fonte, Tipo da Fonte (1-Fotovoltaica, 2- Wind Power), Dispositivo, Porta, Rate
         */
-        //String porta = "/dev/ttyUSB0";
-        String porta = "COM12";
+        String porta = "/dev/ttyUSB0";
+        //String porta = "COM12";
         
         /*
         String[] parametros = { "-name", "Factory",
@@ -43,7 +42,7 @@ public class SMAPSO {
         Boot.main(parametros);	
         */
        
-        /*
+        
         String[] parametros = { "-host", "141.219.121.124", "-container",
                                 "-container-name","Router1", 
                                 "1:mtu.project.sma.sourceenergy.AgentSourceEnergy(Fotovoltaica1, 1, END_DEVICE1, "+porta+", 9600);"
@@ -51,9 +50,9 @@ public class SMAPSO {
                               
                               };		
         Boot.main(parametros);	
-        */
         
-         
+        
+        /* 
         String[] parametros = { "-gui", "-host", "141.219.121.124", "-container",
                                 "-container-name","Coordinator", 
                                 "Central:mtu.project.sma.central.AgentCentral(iniciar);"
@@ -61,7 +60,7 @@ public class SMAPSO {
                               
                               };    
         Boot.main(parametros);	
-        
+        */
 	 
     }
     
